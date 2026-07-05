@@ -1,457 +1,1905 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Livreely - Admin</title>
-  <style>
-    /* Styles identiques aux précédents – je les reprends ici pour gagner de la place */
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      background: #0f172a;
-      color: #e2e8f0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    .wrap { max-width: 440px; margin: 0 auto; min-height: 100vh; position: relative; padding: 0 16px 100px; }
-    .orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-    .orb { position: absolute; filter: blur(90px); opacity: .55; border-radius: 50%; }
-    .o1 { width: 300px; height: 300px; background: radial-gradient(circle at 30% 30%, #22ff88, transparent 60%); top: -80px; left: -90px; animation: float 14s ease-in-out infinite; }
-    .o2 { width: 340px; height: 340px; background: radial-gradient(circle at 70% 70%, #ff7a2f, transparent 60%); bottom: -100px; right: -120px; animation: float 18s ease-in-out infinite reverse; }
-    @keyframes float { 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(20px)} }
-    .view { position: relative; z-index: 1; padding-top: 26px; }
-    .view[hidden] { display: none !important; }
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 20px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-    .login-card { padding: 28px 22px; margin-top: 36px; }
-    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-    .logo {
-      width: 46px; height: 46px; border-radius: 14px;
-      background: linear-gradient(135deg,#22ff88,#16c064);
-      display: grid; place-items: center; color: #0f172a;
-      box-shadow: 0 8px 20px rgba(34,255,136,.3);
-    }
-    .brand h1 { font-size: 20px; margin: 0; font-weight: 800; }
-    .brand p { margin: 3px 0 0; font-size: 12px; color: #94a3b8; }
-    label { display: block; font-size: 13px; color: #cbd5e1; margin: 14px 0 6px; }
-    .input {
-      width: 100%; padding: 14px; border-radius: 14px;
-      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14);
-      color: #fff; font-size: 15px; outline: none;
-    }
-    .input:focus { border-color: #22ff88; box-shadow: 0 0 0 3px rgba(34,255,136,.15); }
-    .btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-weight: 700; font-size: 15px; cursor: pointer; }
-    .btn-primary { background: linear-gradient(135deg,#22ff88,#1fd17a); color: #052e16; margin-top: 18px; box-shadow: 0 8px 22px rgba(34,255,136,.28); }
-    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,.15); color: #e2e8f0; }
-    .btn-sm { padding: 9px 12px; font-size: 13px; border-radius: 11px; width: auto; }
-    .btn-accept { background: linear-gradient(135deg,#22ff88,#1ad67a); color: #052e16; }
-    .btn-danger { background: linear-gradient(135deg,#ff5a5a,#cc3333); color: #fff; }
-    .error {
-      margin-top: 12px; padding: 10px 12px; border-radius: 12px;
-      background: rgba(255,122,47,.12); border: 1px solid rgba(255,122,47,.35);
-      color: #ffd1b8; font-size: 13px; display: none;
-    }
-    .error.show { display: block; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .greet { font-size: 24px; font-weight: 800; }
-    .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-    .icon-btn {
-      width: 42px; height: 42px; border-radius: 13px;
-      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
-      display: grid; place-items: center; cursor: pointer;
-    }
-    .tabs {
-      position: sticky; top: 10px; z-index: 5; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
-      padding: 8px; background: rgba(15,23,42,.7); backdrop-filter: blur(14px);
-      border: 1px solid rgba(255,255,255,.08); border-radius: 16px; margin-bottom: 14px;
-    }
-    .tab { padding: 10px; border-radius: 12px; background: transparent; border: none; color: #94a3b8; font-weight: 700; font-size: 13px; cursor: pointer; }
-    .tab.active { background: rgba(255,255,255,.1); color: #fff; }
-    .panel { display: none; animation: fade .28s ease; }
-    .panel.active { display: block; }
-    @keyframes fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-    .order { padding: 15px; margin-bottom: 12px; }
-    .order-head { display: flex; gap: 12px; align-items: flex-start; }
-    .icon { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; }
-    .icon.restaurant { background: rgba(34,255,136,.15); color: #22ff88; border: 1px solid rgba(34,255,136,.3); }
-    .icon.colis { background: rgba(255,122,47,.15); color: #ff7a2f; border: 1px solid rgba(255,122,47,.3); }
-    .icon.courses { background: rgba(148,163,184,.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); }
-    .oh-main { flex: 1; min-width: 0; }
-    .oh-id { font-weight: 800; font-size: 14px; }
-    .oh-route { font-size: 13px; color: #cbd5e1; margin-top: 3px; }
-    .oh-price { font-weight: 800; color: #22ff88; font-size: 14px; margin-left: 6px; }
-    .meta { display: flex; flex-wrap: wrap; gap: 12px; margin: 11px 0 13px; font-size: 12px; color: #94a3b8; }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .empty { padding: 36px 20px; text-align: center; color: #94a3b8; font-size: 14px; }
-    .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #0b1220; border: 1px solid rgba(255,255,255,.15);
-      padding: 12px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
-      z-index: 60; font-size: 14px; font-weight: 600; display: none;
-    }
-    .toast.show { display: block; animation: up .3s ease; }
-    @keyframes up { from{opacity:0;transform:translate(-50%,10px)} to{opacity:1;transform:translate(-50%,0)} }
-    .admin-section { margin-bottom: 20px; }
-    .admin-section h3 { margin: 0 0 12px; font-size: 16px; }
-    .livreur-form { display: flex; flex-direction: column; gap: 8px; }
-    .h-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 10px; }
-    .badge { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
-    .b-on { background: rgba(34,255,136,.15); color: #22ff88; border: 1px solid rgba(34,255,136,.3); }
-    .b-off { background: rgba(148,163,184,.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,.25); }
-    .b-gps-off { background: rgba(255,122,47,.15); color: #ff7a2f; border: 1px solid rgba(255,122,47,.3); }
-    .dot-s { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Livreely — Delivery Platform</title>
+
+    <!-- Firebase SDKs (modular v9+) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"
+            }
+        }
+    </script>
+
+    <!-- Font Awesome 6 (gratuit) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f4f7fc;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ===== LOGIN PAGE ===== */
+        #loginPage {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem 1.5rem;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12);
+            margin: 1rem;
+            transition: 0.3s;
+        }
+        #loginPage h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #loginPage h1 i {
+            color: #3b82f6;
+            font-size: 2rem;
+        }
+        #loginPage .sub {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        #loginPage label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #334155;
+            display: block;
+            margin-top: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+        #loginPage input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: #f8fafc;
+        }
+        #loginPage input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+        #loginPage .btn-primary {
+            width: 100%;
+            margin-top: 1.8rem;
+            padding: 0.85rem;
+            background: #0f172a;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #loginPage .btn-primary:hover {
+            background: #1e293b;
+            transform: scale(1.01);
+        }
+        #loginPage .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #loginError {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
+            text-align: center;
+            min-height: 1.5rem;
+        }
+        #loginPage .demo-hint {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f1f5f9;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            color: #475569;
+            text-align: center;
+            border: 1px dashed #cbd5e1;
+        }
+        #loginPage .demo-hint strong {
+            color: #0f172a;
+        }
+
+        /* ===== APP SHELL ===== */
+        #appShell {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: #f4f7fc;
+        }
+
+        /* ===== TOP NAV ===== */
+        .topnav {
+            background: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .topnav .brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #0f172a;
+        }
+        .topnav .brand i {
+            color: #3b82f6;
+        }
+        .topnav .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            font-size: 0.9rem;
+        }
+        .topnav .user-info .role-badge {
+            background: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #1e293b;
+        }
+        .topnav .user-info .role-badge.admin {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .topnav .user-info .role-badge.store {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .topnav .user-info .role-badge.driver {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .topnav .user-info .role-badge.client {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        .topnav .user-info .role-badge.delivery_manager {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+        .topnav .btn-logout {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.3rem 0.6rem;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+        .topnav .btn-logout:hover {
+            background: #f1f5f9;
+            color: #ef4444;
+        }
+
+        /* ===== DASHBOARD LAYOUT ===== */
+        .dashboard {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dashboard .page-desc {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        /* ===== CARDS GRID ===== */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.2rem 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f1f5f9;
+            transition: 0.2s;
+        }
+        .stat-card:hover {
+            border-color: #dbeafe;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.1rem;
+        }
+        .stat-card .icon {
+            float: right;
+            font-size: 1.8rem;
+            color: #dbeafe;
+        }
+
+        /* ===== TABLES / LISTS ===== */
+        .card-panel {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem 1.8rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+        .card-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .card-panel .panel-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card-panel .panel-header .actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .btn-primary {
+            background: #0f172a;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1e293b;
+        }
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #e2e8f0;
+        }
+        .btn-outline:hover {
+            background: #f8fafc;
+        }
+        .btn-sm {
+            padding: 0.3rem 0.7rem;
+            font-size: 0.75rem;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        table th {
+            text-align: left;
+            padding: 0.6rem 0.3rem 0.6rem 0;
+            border-bottom: 2px solid #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        table td {
+            padding: 0.7rem 0.3rem 0.7rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        table tr:last-child td {
+            border-bottom: none;
+        }
+        table .badge {
+            padding: 0.15rem 0.6rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #1e293b;
+            display: inline-block;
+        }
+        table .badge.admin {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        table .badge.store {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        table .badge.driver {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        table .badge.client {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        table .badge.delivery_manager {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+        table .badge.status-pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        table .badge.status-accepted {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        table .badge.status-picked {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        table .badge.status-delivered {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #94a3b8;
+        }
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            border-radius: 28px;
+            padding: 2rem 2rem 1.8rem;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.25s ease;
+        }
+        @keyframes modalIn {
+            from {
+                transform: scale(0.96) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .modal .modal-sub {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .modal label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #334155;
+            display: block;
+            margin-top: 1rem;
+            margin-bottom: 0.2rem;
+        }
+        .modal input,
+        .modal select,
+        .modal textarea {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        .modal input:focus,
+        .modal select:focus,
+        .modal textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .modal .modal-actions {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 1.8rem;
+            justify-content: flex-end;
+        }
+        .modal .modal-actions .btn {
+            padding: 0.6rem 1.6rem;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .topnav {
+                padding: 0.6rem 1rem;
+            }
+            .topnav .brand {
+                font-size: 1.1rem;
+            }
+            .dashboard {
+                padding: 1rem;
+            }
+            .card-panel {
+                padding: 1rem;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .modal {
+                padding: 1.5rem;
+            }
+            table {
+                font-size: 0.8rem;
+            }
+            table th,
+            table td {
+                padding: 0.4rem 0.2rem;
+            }
+        }
+        @media (max-width: 460px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            .topnav .user-info .role-badge {
+                display: none;
+            }
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: #0f172a;
+            color: white;
+            padding: 0.8rem 1.6rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            max-width: 360px;
+        }
+        .toast.success {
+            background: #16a34a;
+        }
+        .toast.error {
+            background: #dc2626;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 1.1rem;
+            height: 1.1rem;
+            border: 2.5px solid #e2e8f0;
+            border-top-color: #0f172a;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="orbs"><div class="orb o1"></div><div class="orb o2"></div></div>
 
-  <!-- LOGIN -->
-  <section id="loginView" class="view">
-    <div class="card login-card">
-      <div class="brand">
-        <div class="logo">🚀</div>
-        <div>
-          <h1>Livreely</h1>
-          <p>Espace Admin</p>
+    <!-- ========================================================= -->
+    <!-- LOGIN PAGE -->
+    <!-- ========================================================= -->
+    <div id="loginPage">
+        <h1><i class="fas fa-truck-fast"></i> Livreely</h1>
+        <p class="sub">Plateforme de livraison · Connectez-vous</p>
+
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="vous@exemple.com" value="mohammedismathoubad@gmail.com" />
+
+        <label for="loginPassword">Mot de passe</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" value="iso1997@13*" />
+
+        <button class="btn-primary" id="loginBtn">
+            <i class="fas fa-arrow-right-to-bracket"></i> Se connecter
+        </button>
+        <div id="loginError"></div>
+
+        <div class="demo-hint">
+            <strong>🔑 Admin</strong> · utilisateur existant<br />
+            <span style="font-size:0.8rem;color:#94a3b8;">(les rôles sont gérés dans Firestore)</span>
         </div>
-      </div>
-      <form id="loginForm" autocomplete="off">
-        <label>Email</label>
-        <input id="loginEmail" class="input" type="email" placeholder="admin@livreely.com" required>
-        <label>Mot de passe</label>
-        <input id="loginPwd" type="password" class="input" placeholder="••••••••" required>
-        <button class="btn btn-primary" type="submit">Se connecter</button>
-        <div id="loginError" class="error">Identifiants incorrects</div>
-      </form>
     </div>
-  </section>
 
-  <!-- ADMIN -->
-  <section id="adminView" class="view" hidden>
-    <div class="topbar">
-      <div>
-        <div class="greet">Console Admin</div>
-        <div class="sub">Supervision Livreely</div>
-      </div>
-      <button id="logoutBtn" class="icon-btn">⏻</button>
-    </div>
-    <div class="tabs">
-      <button class="tab active" data-tab="adminPending">Commandes en attente</button>
-      <button class="tab" data-tab="adminUsers">Utilisateurs</button>
-      <button class="tab" data-tab="adminActive">Commandes actives</button>
-    </div>
-    <div id="panel-adminPending" class="panel active"></div>
-    <div id="panel-adminUsers" class="panel"></div>
-    <div id="panel-adminActive" class="panel"></div>
-  </section>
-</div>
+    <!-- ========================================================= -->
+    <!-- APP SHELL -->
+    <!-- ========================================================= -->
+    <div id="appShell">
 
-<div id="toast" class="toast"></div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import {
-    getAuth,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
-  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc, getDoc, setDoc, updateDoc,
-    collection, query, where, onSnapshot, getDocs, deleteDoc
-  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDWtqGUL7LaCvEfN7CWOZfG3uwG123AaGk",
-    authDomain: "livreely.firebaseapp.com",
-    projectId: "livreely",
-    storageBucket: "livreely.firebasestorage.app",
-    messagingSenderId: "1034680381809",
-    appId: "1:1034680381809:web:b69e5ff32096543bedc6d0"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  // DOM
-  const loginView = document.getElementById('loginView');
-  const adminView = document.getElementById('adminView');
-  const loginForm = document.getElementById('loginForm');
-  const loginEmail = document.getElementById('loginEmail');
-  const loginPwd = document.getElementById('loginPwd');
-  const loginError = document.getElementById('loginError');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const toastEl = document.getElementById('toast');
-
-  let currentUser = null;
-  let unsubscribeAll = null;
-
-  function toast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 2200);
-  }
-
-  async function loginUser(email, pwd) {
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email, pwd);
-      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
-      if (!userDoc.exists()) {
-        await signOut(auth);
-        loginError.textContent = 'Utilisateur non enregistré.';
-        loginError.classList.add('show');
-        return;
-      }
-      const data = userDoc.data();
-      if (data.role !== 'admin') {
-        await signOut(auth);
-        loginError.textContent = 'Accès réservé aux administrateurs.';
-        loginError.classList.add('show');
-        return;
-      }
-      toast('Bienvenue Admin !');
-    } catch (err) {
-      loginError.textContent = err.message || 'Échec de connexion';
-      loginError.classList.add('show');
-    }
-  }
-
-  function logout() {
-    signOut(auth);
-    if (unsubscribeAll) { unsubscribeAll(); unsubscribeAll = null; }
-    currentUser = null;
-    loginView.hidden = false;
-    adminView.hidden = true;
-    toast('Déconnecté');
-  }
-
-  function renderAdmin() {
-    loginView.hidden = true;
-    adminView.hidden = false;
-    switchAdminTab('adminPending');
-    subscribeAll();
-  }
-
-  function switchAdminTab(tab) {
-    document.querySelectorAll('#adminView .tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    document.querySelectorAll('#adminView .panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + tab).classList.add('active');
-    if (tab === 'adminPending') renderPendingOrders();
-    if (tab === 'adminUsers') renderUsers();
-    if (tab === 'adminActive') renderActiveOrders();
-  }
-
-  function subscribeAll() {
-    if (unsubscribeAll) unsubscribeAll();
-    // Écouter toutes les collections pour rafraîchir
-    const q = query(collection(db, 'orders'));
-    unsubscribeAll = onSnapshot(q, () => {
-      const activeTab = document.querySelector('#adminView .tab.active');
-      if (activeTab) switchAdminTab(activeTab.dataset.tab);
-    }, err => console.error(err));
-  }
-
-  // --- Commandes en attente ---
-  async function renderPendingOrders() {
-    const wrap = document.getElementById('panel-adminPending');
-    const q = query(collection(db, 'orders'), where('status', '==', 'en_attente'));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      wrap.innerHTML = '<div class="empty">Aucune commande en attente.</div>';
-      return;
-    }
-    let html = '';
-    snap.forEach(doc => {
-      const o = doc.data();
-      const id = doc.id;
-      html += `
-        <div class="card order" style="margin-bottom:12px">
-          <div class="order-head">
-            <div class="icon ${o.type}">${ICONS[o.type]}</div>
-            <div class="oh-main">
-              <div class="oh-id">#${id} • ${o.client}</div>
-              <div class="oh-route">${o.from} → ${o.to}</div>
+        <!-- TOP NAV -->
+        <nav class="topnav">
+            <div class="brand">
+                <i class="fas fa-truck-fast"></i> Livreely
             </div>
-          </div>
-          <div class="meta">${(o.items || []).join(' • ')}</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-            <input type="number" placeholder="Prix livraison (DA)" id="fee-${id}" class="input" style="width:120px;padding:8px" value="${o.fee || ''}">
-            <button class="btn btn-sm btn-accept" onclick="window.approveOrder('${id}')">Approuver</button>
-            <button class="btn btn-sm btn-ghost" onclick="window.rejectOrder('${id}')">Refuser</button>
-          </div>
-        </div>
-      `;
-    });
-    wrap.innerHTML = html;
-  }
-
-  window.approveOrder = async function(id) {
-    const feeInput = document.getElementById('fee-' + id);
-    const fee = parseInt(feeInput.value, 10);
-    if (!fee || fee <= 0) { toast('Veuillez entrer un prix valide'); return; }
-    try {
-      await updateDoc(doc(db, 'orders', id), { fee, status: 'disponible' });
-      toast('Commande approuvée');
-      renderPendingOrders();
-    } catch(e) { toast('Erreur: ' + e.message); }
-  };
-
-  window.rejectOrder = async function(id) {
-    try {
-      await updateDoc(doc(db, 'orders', id), { status: 'refusee' });
-      toast('Commande refusée');
-      renderPendingOrders();
-    } catch(e) { toast('Erreur: ' + e.message); }
-  };
-
-  // --- Commandes actives ---
-  async function renderActiveOrders() {
-    const wrap = document.getElementById('panel-adminActive');
-    const q = query(collection(db, 'orders'), where('status', 'not-in', ['disponible', 'en_attente', 'refusee']));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      wrap.innerHTML = '<div class="empty">Aucune commande active.</div>';
-      return;
-    }
-    let html = '';
-    for (const docSnap of snap.docs) {
-      const o = docSnap.data();
-      const id = docSnap.id;
-      let driverName = '-';
-      if (o.assignedTo) {
-        const driverDoc = await getDoc(doc(db, 'drivers', o.assignedTo));
-        if (driverDoc.exists()) driverName = driverDoc.data().name || o.assignedTo;
-      }
-      html += `
-        <div class="card order">
-          <div class="order-head">
-            <div class="icon ${o.type}">${ICONS[o.type]}</div>
-            <div class="oh-main">
-              <div class="oh-id">#${id}</div>
-              <div class="oh-route">${o.from} → ${o.to}</div>
-              <div class="meta">Livreur: ${driverName} • ${o.status}</div>
+            <div class="user-info">
+                <span id="navUserName">—</span>
+                <span class="role-badge" id="navRoleBadge">—</span>
+                <button class="btn-logout" id="logoutBtn" title="Déconnexion">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
-          </div>
+        </nav>
+
+        <!-- DASHBOARD -->
+        <div class="dashboard" id="dashboardContent">
+            <!-- Remplacé dynamiquement -->
         </div>
-      `;
-    }
-    wrap.innerHTML = html;
-  }
+    </div>
 
-  // --- Utilisateurs ---
-  async function renderUsers() {
-    const wrap = document.getElementById('panel-adminUsers');
-    const snap = await getDocs(collection(db, 'users'));
-    const users = [];
-    snap.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
-
-    if (users.length === 0) {
-      wrap.innerHTML = '<div class="empty">Aucun utilisateur.</div>';
-      return;
-    }
-
-    let html = `
-      <div class="admin-section">
-        <h3>Tous les utilisateurs</h3>
-        <div id="usersList">
-    `;
-    users.forEach(u => {
-      const roleBadge = u.role === 'admin' ? '🔴 Admin' : u.role === 'manager' ? '🟠 Manager' : u.role === 'driver' ? '🟢 Livreur' : '🔵 Client';
-      html += `
-        <div class="card h-item" style="margin-bottom:8px">
-          <div>
-            <b>${u.name || u.id}</b> (${u.id})<br>
-            <span style="color:#94a3b8;font-size:12px">${u.email} • ${roleBadge}</span>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-ghost" onclick="window.changeRole('${u.uid}')">🔁 Rôle</button>
-            <button class="btn btn-sm btn-danger" onclick="window.deleteUser('${u.uid}')">🗑️</button>
-          </div>
+    <!-- ========================================================= -->
+    <!-- MODAL -->
+    <!-- ========================================================= -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalContent">
+            <!-- Remplacé dynamiquement -->
         </div>
-      `;
-    });
-    html += `</div></div>`;
-    wrap.innerHTML = html;
-  }
+    </div>
 
-  window.changeRole = async function(uid) {
-    const newRole = prompt('Nouveau rôle (admin, manager, driver, customer) :');
-    if (!newRole) return;
-    try {
-      await updateDoc(doc(db, 'users', uid), { role: newRole });
-      toast('Rôle mis à jour');
-      renderUsers();
-    } catch(e) { toast('Erreur: ' + e.message); }
-  };
+    <!-- ========================================================= -->
+    <!-- TOAST CONTAINER -->
+    <!-- ========================================================= -->
+    <div class="toast-container" id="toastContainer"></div>
 
-  window.deleteUser = async function(uid) {
-    if (!confirm('Supprimer cet utilisateur ?')) return;
-    try {
-      await deleteDoc(doc(db, 'users', uid));
-      // On ne supprime pas le compte Auth ici (nécessite admin SDK)
-      toast('Utilisateur supprimé (Firestore)');
-      renderUsers();
-    } catch(e) { toast('Erreur: ' + e.message); }
-  };
+    <!-- ========================================================= -->
+    <!-- MAIN SCRIPT -->
+    <!-- ========================================================= -->
+    <script type="module">
+        // ---- IMPORTS ----
+        import { initializeApp } from "firebase/app";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut
+        } from "firebase/auth";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            getDoc,
+            getDocs,
+            setDoc,
+            updateDoc,
+            deleteDoc,
+            query,
+            where,
+            orderBy,
+            onSnapshot,
+            addDoc,
+            serverTimestamp,
+            writeBatch
+        } from "firebase/firestore";
 
-  // ICONS
-  const ICONS = {
-    restaurant:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h1a4 4 0 0 0 4-4V2"/><path d="M7 2v7"/><path d="M12 2v10c0 2.2 1.8 4 4 4s4-1.8 4-4V2"/></svg>`,
-    colis:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`,
-    courses:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
-  };
+        // ---- CONFIG ----
+        const firebaseConfig = {
+            apiKey: "AIzaSyDWtqGUL7LaCvEfN7CWOZfG3uwG123AaGk",
+            authDomain: "livreely.firebaseapp.com",
+            projectId: "livreely",
+            storageBucket: "livreely.firebasestorage.app",
+            messagingSenderId: "1034680381809",
+            appId: "1:1034680381809:web:b69e5ff32096543bedc6d0"
+        };
 
-  // --- Auth state ---
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      currentUser = user;
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
-        toast('Accès non autorisé.');
-        logout();
-        return;
-      }
-      renderAdmin();
-    } else {
-      if (unsubscribeAll) { unsubscribeAll(); unsubscribeAll = null; }
-      currentUser = null;
-      loginView.hidden = false;
-      adminView.hidden = true;
-      loginError.classList.remove('show');
-    }
-  });
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    loginError.classList.remove('show');
-    const email = loginEmail.value.trim();
-    const pwd = loginPwd.value.trim();
-    if (!email || !pwd) {
-      loginError.textContent = 'Veuillez remplir tous les champs.';
-      loginError.classList.add('show');
-      return;
-    }
-    loginUser(email, pwd);
-  });
+        // ---- DOM refs ----
+        const loginPage = document.getElementById('loginPage');
+        const appShell = document.getElementById('appShell');
+        const dashboard = document.getElementById('dashboardContent');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const navUserName = document.getElementById('navUserName');
+        const navRoleBadge = document.getElementById('navRoleBadge');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
+        const toastContainer = document.getElementById('toastContainer');
 
-  logoutBtn.addEventListener('click', logout);
+        // ---- STATE ----
+        let currentUser = null; // { uid, email, name, role, tel }
+        let allUsers = [];
+        let allStores = [];
+        let allProducts = [];
+        let allOrders = [];
+        let allDrivers = [];
+        let unsubscribers = [];
 
-  document.querySelectorAll('#adminView .tab').forEach(b => {
-    b.addEventListener('click', () => switchAdminTab(b.dataset.tab));
-  });
+        // ---- HELPERS ----
+        function toast(message, type = 'info') {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            toastContainer.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300); }, 3200);
+        }
 
-  console.log('Livreely - Admin app ready');
-</script>
+        function showModal(html) {
+            modalContent.innerHTML = html;
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+        // close on backdrop click
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        function render(html) {
+            dashboard.innerHTML = html;
+        }
+
+        function getVal(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+        }
+
+        function setVal(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        }
+
+        // ---- AUTH ----
+        async function handleLogin() {
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value.trim();
+            if (!email || !password) {
+                loginError.textContent = 'Veuillez remplir tous les champs.';
+                return;
+            }
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span> Connexion...';
+            loginError.textContent = '';
+
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                // l'état sera géré par onAuthStateChanged
+            } catch (err) {
+                loginError.textContent = err.message;
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Se connecter';
+            }
+        }
+
+        loginBtn.addEventListener('click', handleLogin);
+        loginEmail.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+        loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            // nettoyer les listeners
+            unsubscribers.forEach(fn => fn());
+            unsubscribers = [];
+        });
+
+        // ---- AUTH STATE ----
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // récupérer le document utilisateur
+                try {
+                    const docRef = doc(db, 'users', user.uid);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        currentUser = { uid: user.uid, email: user.email, ...data };
+                        // Mettre à jour la nav
+                        navUserName.textContent = currentUser.name || currentUser.email;
+                        const role = currentUser.role || 'client';
+                        navRoleBadge.textContent = role.replace('_', ' ');
+                        navRoleBadge.className = `role-badge ${role}`;
+                        // Afficher l'app
+                        loginPage.style.display = 'none';
+                        appShell.style.display = 'block';
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Se connecter';
+                        // Lancer le dashboard
+                        startApp();
+                    } else {
+                        // utilisateur auth mais pas dans firestore → déconnecter
+                        toast('Compte non configuré. Contactez l\'admin.', 'error');
+                        await signOut(auth);
+                    }
+                } catch (err) {
+                    toast('Erreur lors du chargement du profil.', 'error');
+                    console.error(err);
+                }
+            } else {
+                currentUser = null;
+                loginPage.style.display = 'block';
+                appShell.style.display = 'none';
+                // nettoyer
+                unsubscribers.forEach(fn => fn());
+                unsubscribers = [];
+            }
+        });
+
+        // ---- START APP ----
+        function startApp() {
+            // Charger les données en fonction du rôle
+            const role = currentUser.role || 'client';
+            // Nettoyer anciens listeners
+            unsubscribers.forEach(fn => fn());
+            unsubscribers = [];
+
+            if (role === 'admin') {
+                loadAdminDashboard();
+            } else if (role === 'store') {
+                loadStoreDashboard();
+            } else if (role === 'delivery_manager') {
+                loadDeliveryManagerDashboard();
+            } else if (role === 'driver') {
+                loadDriverDashboard();
+            } else {
+                loadClientDashboard();
+            }
+        }
+
+        // =============================================================
+        // ADMIN DASHBOARD
+        // =============================================================
+        function loadAdminDashboard() {
+            render(`
+                <h2><i class="fas fa-user-shield"></i> Admin · Vue d'ensemble</h2>
+                <p class="page-desc">Gérez les utilisateurs, les commerces, les livreurs et les commandes.</p>
+
+                <div class="cards-grid" id="adminStats"></div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-users"></i> Utilisateurs</h3>
+                        <div class="actions">
+                            <button class="btn btn-primary btn-sm" onclick="window._addUser()">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    <div id="adminUsersTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-store"></i> Commerces</h3>
+                        <div class="actions">
+                            <button class="btn btn-primary btn-sm" onclick="window._addStore()">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    <div id="adminStoresTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-truck"></i> Livreurs</h3>
+                        <div class="actions">
+                            <button class="btn btn-primary btn-sm" onclick="window._addDriver()">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    <div id="adminDriversTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-list-check"></i> Commandes</h3>
+                    </div>
+                    <div id="adminOrdersTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+            `);
+
+            // Exposer les fonctions globales pour les boutons
+            window._addUser = () => openAddUserModal();
+            window._addStore = () => openAddStoreModal();
+            window._addDriver = () => openAddDriverModal();
+
+            // Charger les données
+            loadAdminData();
+        }
+
+        async function loadAdminData() {
+            // Stats
+            try {
+                const [usersSnap, storesSnap, driversSnap, ordersSnap] = await Promise.all([
+                    getDocs(collection(db, 'users')),
+                    getDocs(collection(db, 'stores')),
+                    getDocs(collection(db, 'drivers')),
+                    getDocs(collection(db, 'orders'))
+                ]);
+                allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allStores = storesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allDrivers = driversSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                document.getElementById('adminStats').innerHTML = `
+                    <div class="stat-card"><span class="number">${allUsers.length}</span><span class="label">👤 Utilisateurs</span></div>
+                    <div class="stat-card"><span class="number">${allStores.length}</span><span class="label">🏪 Commerces</span></div>
+                    <div class="stat-card"><span class="number">${allDrivers.length}</span><span class="label">🚚 Livreurs</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.length}</span><span class="label">📦 Commandes</span></div>
+                `;
+
+                renderAdminUsers();
+                renderAdminStores();
+                renderAdminDrivers();
+                renderAdminOrders();
+            } catch (err) {
+                toast('Erreur chargement données admin', 'error');
+                console.error(err);
+            }
+        }
+
+        function renderAdminUsers() {
+            const container = document.getElementById('adminUsersTable');
+            if (!allUsers.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>Aucun utilisateur</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>Email</th><th>Nom</th><th>Tél</th><th>Rôle</th><th>Actions</th></tr></thead><tbody>`;
+            allUsers.forEach(u => {
+                html += `<tr>
+                    <td>${u.email || ''}</td>
+                    <td>${u.name || ''}</td>
+                    <td>${u.tel || ''}</td>
+                    <td><span class="badge ${u.role || 'client'}">${u.role || 'client'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._editUser('${u.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="window._deleteUser('${u.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._editUser = (uid) => openEditUserModal(uid);
+            window._deleteUser = (uid) => deleteUser(uid);
+        }
+
+        function renderAdminStores() {
+            const container = document.getElementById('adminStoresTable');
+            if (!allStores.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-store"></i><p>Aucun commerce</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>Nom</th><th>Adresse</th><th>Tél</th><th>Propriétaire</th><th>Actions</th></tr></thead><tbody>`;
+            allStores.forEach(s => {
+                const owner = allUsers.find(u => u.uid === s.ownerId);
+                html += `<tr>
+                    <td>${s.name || ''}</td>
+                    <td>${s.address || ''}</td>
+                    <td>${s.tel || ''}</td>
+                    <td>${owner ? owner.name || owner.email : s.ownerId || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._editStore('${s.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="window._deleteStore('${s.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._editStore = (id) => openEditStoreModal(id);
+            window._deleteStore = (id) => deleteStore(id);
+        }
+
+        function renderAdminDrivers() {
+            const container = document.getElementById('adminDriversTable');
+            if (!allDrivers.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><p>Aucun livreur</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>ID</th><th>Nom</th><th>Tél</th><th>En ligne</th><th>UID</th><th>Actions</th></tr></thead><tbody>`;
+            allDrivers.forEach(d => {
+                html += `<tr>
+                    <td>${d.id || ''}</td>
+                    <td>${d.name || ''}</td>
+                    <td>${d.tel || ''}</td>
+                    <td>${d.online ? '🟢 Oui' : '🔴 Non'}</td>
+                    <td>${d.uid || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._editDriver('${d.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="window._deleteDriver('${d.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._editDriver = (id) => openEditDriverModal(id);
+            window._deleteDriver = (id) => deleteDriver(id);
+        }
+
+        function renderAdminOrders() {
+            const container = document.getElementById('adminOrdersTable');
+            if (!allOrders.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-list-check"></i><p>Aucune commande</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Livreur</th><th>Actions</th></tr></thead><tbody>`;
+            allOrders.forEach(o => {
+                const client = allUsers.find(u => u.uid === o.clientId);
+                const driver = allDrivers.find(d => d.id === o.assignedTo);
+                html += `<tr>
+                    <td>${o.id.slice(0, 8)}</td>
+                    <td>${client ? client.name || client.email : o.clientId || ''}</td>
+                    <td>${o.total ? o.total.toFixed(2) + ' €' : '—'}</td>
+                    <td><span class="badge status-${o.status || 'pending'}">${o.status || 'pending'}</span></td>
+                    <td>${driver ? driver.name : o.assignedTo || '—'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._editOrder('${o.id}')"><i class="fas fa-pen"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._editOrder = (id) => openEditOrderModal(id);
+        }
+
+        // ---- MODALS ADMIN ----
+        function openAddUserModal() {
+            showModal(`
+                <h3><i class="fas fa-user-plus"></i> Ajouter un utilisateur</h3>
+                <p class="modal-sub">Créez un compte utilisateur avec un rôle.</p>
+                <label>Email</label><input id="mEmail" placeholder="email@exemple.com" />
+                <label>Mot de passe</label><input id="mPassword" type="password" placeholder="••••••••" />
+                <label>Nom</label><input id="mName" placeholder="Nom complet" />
+                <label>Téléphone</label><input id="mTel" placeholder="0612345678" />
+                <label>Rôle</label>
+                <select id="mRole">
+                    <option value="client">Client</option>
+                    <option value="store">Commerce</option>
+                    <option value="driver">Livreur</option>
+                    <option value="delivery_manager">Responsable livraison</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Créer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const email = getVal('mEmail');
+                const password = getVal('mPassword');
+                const name = getVal('mName');
+                const tel = getVal('mTel');
+                const role = getVal('mRole');
+                if (!email || !password || !name) {
+                    toast('Email, mot de passe et nom requis.', 'error');
+                    return;
+                }
+                try {
+                    // Créer l'utilisateur dans Auth
+                    const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                    const uid = userCred.user.uid;
+                    await setDoc(doc(db, 'users', uid), {
+                        email,
+                        name,
+                        tel,
+                        role,
+                        uid
+                    });
+                    toast('Utilisateur créé avec succès !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) {
+                    toast(err.message, 'error');
+                }
+            };
+        }
+
+        function openEditUserModal(uid) {
+            const user = allUsers.find(u => u.id === uid);
+            if (!user) return;
+            showModal(`
+                <h3><i class="fas fa-user-edit"></i> Modifier l'utilisateur</h3>
+                <p class="modal-sub">Modifiez les informations du compte.</p>
+                <label>Nom</label><input id="mEditName" value="${user.name || ''}" />
+                <label>Téléphone</label><input id="mEditTel" value="${user.tel || ''}" />
+                <label>Rôle</label>
+                <select id="mEditRole">
+                    <option value="client" ${user.role === 'client' ? 'selected' : ''}>Client</option>
+                    <option value="store" ${user.role === 'store' ? 'selected' : ''}>Commerce</option>
+                    <option value="driver" ${user.role === 'driver' ? 'selected' : ''}>Livreur</option>
+                    <option value="delivery_manager" ${user.role === 'delivery_manager' ? 'selected' : ''}>Responsable livraison</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Enregistrer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mEditName');
+                const tel = getVal('mEditTel');
+                const role = getVal('mEditRole');
+                if (!name) { toast('Le nom est requis.', 'error'); return; }
+                try {
+                    await updateDoc(doc(db, 'users', uid), { name, tel, role });
+                    toast('Utilisateur mis à jour !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        async function deleteUser(uid) {
+            if (!confirm('Supprimer définitivement cet utilisateur ?')) return;
+            try {
+                await deleteDoc(doc(db, 'users', uid));
+                toast('Utilisateur supprimé.', 'success');
+                loadAdminData();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        function openAddStoreModal() {
+            showModal(`
+                <h3><i class="fas fa-store"></i> Ajouter un commerce</h3>
+                <p class="modal-sub">Créez un nouveau commerce.</p>
+                <label>Nom du commerce</label><input id="mStoreName" placeholder="Mon commerce" />
+                <label>Adresse</label><input id="mStoreAddress" placeholder="123 rue ..." />
+                <label>Téléphone</label><input id="mStoreTel" placeholder="0612345678" />
+                <label>Propriétaire (UID)</label>
+                <select id="mStoreOwner">
+                    <option value="">— Sélectionner un utilisateur —</option>
+                    ${allUsers.filter(u => u.role === 'store' || u.role === 'admin').map(u => `<option value="${u.uid}">${u.name || u.email}</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Créer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mStoreName');
+                const address = getVal('mStoreAddress');
+                const tel = getVal('mStoreTel');
+                const ownerId = getVal('mStoreOwner');
+                if (!name) { toast('Nom requis.', 'error'); return; }
+                try {
+                    await addDoc(collection(db, 'stores'), { name, address, tel, ownerId, createdAt: serverTimestamp() });
+                    toast('Commerce créé !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        function openEditStoreModal(id) {
+            const store = allStores.find(s => s.id === id);
+            if (!store) return;
+            showModal(`
+                <h3><i class="fas fa-store"></i> Modifier le commerce</h3>
+                <label>Nom</label><input id="mStoreName" value="${store.name || ''}" />
+                <label>Adresse</label><input id="mStoreAddress" value="${store.address || ''}" />
+                <label>Téléphone</label><input id="mStoreTel" value="${store.tel || ''}" />
+                <label>Propriétaire (UID)</label>
+                <select id="mStoreOwner">
+                    <option value="">— Aucun —</option>
+                    ${allUsers.filter(u => u.role === 'store' || u.role === 'admin').map(u => `<option value="${u.uid}" ${u.uid === store.ownerId ? 'selected' : ''}>${u.name || u.email}</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Enregistrer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mStoreName');
+                const address = getVal('mStoreAddress');
+                const tel = getVal('mStoreTel');
+                const ownerId = getVal('mStoreOwner');
+                if (!name) { toast('Nom requis.', 'error'); return; }
+                try {
+                    await updateDoc(doc(db, 'stores', id), { name, address, tel, ownerId });
+                    toast('Commerce mis à jour !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        async function deleteStore(id) {
+            if (!confirm('Supprimer ce commerce ?')) return;
+            try {
+                await deleteDoc(doc(db, 'stores', id));
+                toast('Commerce supprimé.', 'success');
+                loadAdminData();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        function openAddDriverModal() {
+            showModal(`
+                <h3><i class="fas fa-truck"></i> Ajouter un livreur</h3>
+                <p class="modal-sub">Associez un utilisateur existant à un profil livreur.</p>
+                <label>ID Livreur (ex: LV001)</label><input id="mDriverId" placeholder="LV001" />
+                <label>Nom</label><input id="mDriverName" placeholder="Nom du livreur" />
+                <label>Téléphone</label><input id="mDriverTel" placeholder="0612345678" />
+                <label>Utilisateur (UID)</label>
+                <select id="mDriverUid">
+                    <option value="">— Sélectionner un utilisateur —</option>
+                    ${allUsers.map(u => `<option value="${u.uid}">${u.name || u.email}</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Créer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const id = getVal('mDriverId');
+                const name = getVal('mDriverName');
+                const tel = getVal('mDriverTel');
+                const uid = getVal('mDriverUid');
+                if (!id || !name) { toast('ID et nom requis.', 'error'); return; }
+                try {
+                    await setDoc(doc(db, 'drivers', id), { name, tel, uid, online: false, gps: null });
+                    toast('Livreur créé !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        function openEditDriverModal(id) {
+            const driver = allDrivers.find(d => d.id === id);
+            if (!driver) return;
+            showModal(`
+                <h3><i class="fas fa-truck"></i> Modifier le livreur</h3>
+                <label>Nom</label><input id="mDriverName" value="${driver.name || ''}" />
+                <label>Téléphone</label><input id="mDriverTel" value="${driver.tel || ''}" />
+                <label>En ligne</label>
+                <select id="mDriverOnline">
+                    <option value="true" ${driver.online ? 'selected' : ''}>Oui</option>
+                    <option value="false" ${!driver.online ? 'selected' : ''}>Non</option>
+                </select>
+                <label>Utilisateur (UID)</label>
+                <select id="mDriverUid">
+                    <option value="">— Aucun —</option>
+                    ${allUsers.map(u => `<option value="${u.uid}" ${u.uid === driver.uid ? 'selected' : ''}>${u.name || u.email}</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Enregistrer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mDriverName');
+                const tel = getVal('mDriverTel');
+                const online = getVal('mDriverOnline') === 'true';
+                const uid = getVal('mDriverUid');
+                if (!name) { toast('Nom requis.', 'error'); return; }
+                try {
+                    await updateDoc(doc(db, 'drivers', id), { name, tel, online, uid });
+                    toast('Livreur mis à jour !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        async function deleteDriver(id) {
+            if (!confirm('Supprimer ce livreur ?')) return;
+            try {
+                await deleteDoc(doc(db, 'drivers', id));
+                toast('Livreur supprimé.', 'success');
+                loadAdminData();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        function openEditOrderModal(id) {
+            const order = allOrders.find(o => o.id === id);
+            if (!order) return;
+            showModal(`
+                <h3><i class="fas fa-pen"></i> Modifier la commande</h3>
+                <label>Statut</label>
+                <select id="mOrderStatus">
+                    <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>En attente</option>
+                    <option value="accepted" ${order.status === 'accepted' ? 'selected' : ''}>Acceptée</option>
+                    <option value="picked" ${order.status === 'picked' ? 'selected' : ''}>Récupérée</option>
+                    <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Livrée</option>
+                </select>
+                <label>Assigné à (ID livreur)</label>
+                <select id="mOrderDriver">
+                    <option value="">— Non assigné —</option>
+                    ${allDrivers.map(d => `<option value="${d.id}" ${d.id === order.assignedTo ? 'selected' : ''}>${d.name} (${d.id})</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Enregistrer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const status = getVal('mOrderStatus');
+                const assignedTo = getVal('mOrderDriver') || null;
+                try {
+                    await updateDoc(doc(db, 'orders', id), { status, assignedTo });
+                    toast('Commande mise à jour !', 'success');
+                    closeModal();
+                    loadAdminData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        // =============================================================
+        // STORE DASHBOARD
+        // =============================================================
+        function loadStoreDashboard() {
+            render(`
+                <h2><i class="fas fa-store"></i> Mon commerce</h2>
+                <p class="page-desc">Gérez vos produits et suivez vos commandes.</p>
+
+                <div class="cards-grid" id="storeStats"></div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-box"></i> Produits</h3>
+                        <div class="actions">
+                            <button class="btn btn-primary btn-sm" onclick="window._addProduct()">
+                                <i class="fas fa-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    <div id="storeProductsTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-list-check"></i> Commandes reçues</h3>
+                    </div>
+                    <div id="storeOrdersTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+            `);
+
+            window._addProduct = () => openAddProductModal();
+            loadStoreData();
+        }
+
+        async function loadStoreData() {
+            try {
+                // Récupérer le commerce du store (ownerId = currentUser.uid)
+                const storesSnap = await getDocs(query(collection(db, 'stores'), where('ownerId', '==', currentUser.uid)));
+                const store = storesSnap.docs[0] ? { id: storesSnap.docs[0].id, ...storesSnap.docs[0].data() } : null;
+                if (!store) {
+                    document.getElementById('storeStats').innerHTML =
+                        `<div class="stat-card"><span class="number">⚠️</span><span class="label">Aucun commerce associé</span></div>`;
+                    document.getElementById('storeProductsTable').innerHTML =
+                        `<div class="empty-state"><i class="fas fa-store"></i><p>Vous n'avez pas encore de commerce. Contactez l'admin.</p></div>`;
+                    document.getElementById('storeOrdersTable').innerHTML =
+                        `<div class="empty-state"><i class="fas fa-list-check"></i><p>—</p></div>`;
+                    return;
+                }
+
+                // Produits
+                const productsSnap = await getDocs(query(collection(db, 'products'), where('storeId', '==', store.id)));
+                allProducts = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Commandes pour ce store
+                const ordersSnap = await getDocs(query(collection(db, 'orders'), where('storeId', '==', store.id)));
+                allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                document.getElementById('storeStats').innerHTML = `
+                    <div class="stat-card"><span class="number">${allProducts.length}</span><span class="label">📦 Produits</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.length}</span><span class="label">📋 Commandes</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.filter(o => o.status === 'pending').length}</span><span class="label">⏳ En attente</span></div>
+                `;
+
+                renderStoreProducts(store.id);
+                renderStoreOrders();
+            } catch (err) {
+                toast('Erreur chargement données store', 'error');
+                console.error(err);
+            }
+        }
+
+        function renderStoreProducts(storeId) {
+            const container = document.getElementById('storeProductsTable');
+            if (!allProducts.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-box"></i><p>Aucun produit</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>Nom</th><th>Description</th><th>Prix</th><th>Actions</th></tr></thead><tbody>`;
+            allProducts.forEach(p => {
+                html += `<tr>
+                    <td>${p.name || ''}</td>
+                    <td>${p.description || ''}</td>
+                    <td>${p.price ? p.price.toFixed(2) + ' €' : '—'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._editProduct('${p.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="window._deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._editProduct = (id) => openEditProductModal(id);
+            window._deleteProduct = (id) => deleteProduct(id);
+        }
+
+        function renderStoreOrders() {
+            const container = document.getElementById('storeOrdersTable');
+            if (!allOrders.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-list-check"></i><p>Aucune commande</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Livreur</th></tr></thead><tbody>`;
+            allOrders.forEach(o => {
+                const client = allUsers.find(u => u.uid === o.clientId);
+                const driver = allDrivers.find(d => d.id === o.assignedTo);
+                html += `<tr>
+                    <td>${o.id.slice(0, 8)}</td>
+                    <td>${client ? client.name || client.email : o.clientId || ''}</td>
+                    <td>${o.total ? o.total.toFixed(2) + ' €' : '—'}</td>
+                    <td><span class="badge status-${o.status || 'pending'}">${o.status || 'pending'}</span></td>
+                    <td>${driver ? driver.name : o.assignedTo || '—'}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function openAddProductModal() {
+            showModal(`
+                <h3><i class="fas fa-box"></i> Ajouter un produit</h3>
+                <label>Nom</label><input id="mProdName" placeholder="Nom du produit" />
+                <label>Description</label><input id="mProdDesc" placeholder="Description" />
+                <label>Prix (€)</label><input id="mProdPrice" type="number" step="0.01" placeholder="0.00" />
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mProdName');
+                const description = getVal('mProdDesc');
+                const price = parseFloat(getVal('mProdPrice'));
+                if (!name || isNaN(price)) { toast('Nom et prix valide requis.', 'error'); return; }
+                try {
+                    // Récupérer le storeId
+                    const storesSnap = await getDocs(query(collection(db, 'stores'), where('ownerId', '==', currentUser.uid)));
+                    const store = storesSnap.docs[0];
+                    if (!store) { toast('Aucun commerce associé.', 'error'); return; }
+                    await addDoc(collection(db, 'products'), { name, description, price, storeId: store.id });
+                    toast('Produit ajouté !', 'success');
+                    closeModal();
+                    loadStoreData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        function openEditProductModal(id) {
+            const prod = allProducts.find(p => p.id === id);
+            if (!prod) return;
+            showModal(`
+                <h3><i class="fas fa-pen"></i> Modifier le produit</h3>
+                <label>Nom</label><input id="mProdName" value="${prod.name || ''}" />
+                <label>Description</label><input id="mProdDesc" value="${prod.description || ''}" />
+                <label>Prix (€)</label><input id="mProdPrice" type="number" step="0.01" value="${prod.price || ''}" />
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Enregistrer</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const name = getVal('mProdName');
+                const description = getVal('mProdDesc');
+                const price = parseFloat(getVal('mProdPrice'));
+                if (!name || isNaN(price)) { toast('Nom et prix valide requis.', 'error'); return; }
+                try {
+                    await updateDoc(doc(db, 'products', id), { name, description, price });
+                    toast('Produit mis à jour !', 'success');
+                    closeModal();
+                    loadStoreData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Supprimer ce produit ?')) return;
+            try {
+                await deleteDoc(doc(db, 'products', id));
+                toast('Produit supprimé.', 'success');
+                loadStoreData();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        // =============================================================
+        // DELIVERY MANAGER DASHBOARD
+        // =============================================================
+        function loadDeliveryManagerDashboard() {
+            render(`
+                <h2><i class="fas fa-people-arrows"></i> Gestion des livraisons</h2>
+                <p class="page-desc">Supervisez les livreurs et assignez les commandes.</p>
+
+                <div class="cards-grid" id="dmStats"></div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-truck"></i> Livreurs</h3>
+                    </div>
+                    <div id="dmDriversTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-list-check"></i> Commandes</h3>
+                    </div>
+                    <div id="dmOrdersTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+            `);
+            loadDMData();
+        }
+
+        async function loadDMData() {
+            try {
+                const [driversSnap, ordersSnap] = await Promise.all([
+                    getDocs(collection(db, 'drivers')),
+                    getDocs(collection(db, 'orders'))
+                ]);
+                allDrivers = driversSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                document.getElementById('dmStats').innerHTML = `
+                    <div class="stat-card"><span class="number">${allDrivers.length}</span><span class="label">🚚 Livreurs</span></div>
+                    <div class="stat-card"><span class="number">${allDrivers.filter(d => d.online).length}</span><span class="label">🟢 En ligne</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.length}</span><span class="label">📦 Commandes</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.filter(o => o.status === 'pending').length}</span><span class="label">⏳ En attente</span></div>
+                `;
+
+                renderDMDrivers();
+                renderDMOrders();
+            } catch (err) {
+                toast('Erreur chargement données', 'error');
+                console.error(err);
+            }
+        }
+
+        function renderDMDrivers() {
+            const container = document.getElementById('dmDriversTable');
+            if (!allDrivers.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><p>Aucun livreur</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>ID</th><th>Nom</th><th>En ligne</th><th>Actions</th></tr></thead><tbody>`;
+            allDrivers.forEach(d => {
+                html += `<tr>
+                    <td>${d.id}</td>
+                    <td>${d.name || ''}</td>
+                    <td>${d.online ? '🟢 Oui' : '🔴 Non'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._toggleDriver('${d.id}')">
+                            ${d.online ? '🔄 Mettre hors ligne' : '🔄 Mettre en ligne'}
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._toggleDriver = async (id) => {
+                const driver = allDrivers.find(d => d.id === id);
+                if (!driver) return;
+                try {
+                    await updateDoc(doc(db, 'drivers', id), { online: !driver.online });
+                    toast(`Livreur ${!driver.online ? 'en ligne' : 'hors ligne'}`, 'success');
+                    loadDMData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        function renderDMOrders() {
+            const container = document.getElementById('dmOrdersTable');
+            if (!allOrders.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-list-check"></i><p>Aucune commande</p></div>`;
+                return;
+            }
+            let html =
+                `<table><thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Livreur</th><th>Actions</th></tr></thead><tbody>`;
+            allOrders.forEach(o => {
+                const client = allUsers.find(u => u.uid === o.clientId);
+                const driver = allDrivers.find(d => d.id === o.assignedTo);
+                html += `<tr>
+                    <td>${o.id.slice(0, 8)}</td>
+                    <td>${client ? client.name || client.email : o.clientId || ''}</td>
+                    <td>${o.total ? o.total.toFixed(2) + ' €' : '—'}</td>
+                    <td><span class="badge status-${o.status || 'pending'}">${o.status || 'pending'}</span></td>
+                    <td>${driver ? driver.name : o.assignedTo || '—'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="window._assignOrder('${o.id}')"><i class="fas fa-user-plus"></i> Assigner</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._assignOrder = (id) => openAssignOrderModal(id);
+        }
+
+        function openAssignOrderModal(id) {
+            const order = allOrders.find(o => o.id === id);
+            if (!order) return;
+            showModal(`
+                <h3><i class="fas fa-user-plus"></i> Assigner la commande</h3>
+                <label>Livreur</label>
+                <select id="mAssignDriver">
+                    <option value="">— Non assigné —</option>
+                    ${allDrivers.filter(d => d.online).map(d => `<option value="${d.id}" ${d.id === order.assignedTo ? 'selected' : ''}>${d.name} (${d.id})</option>`).join('')}
+                </select>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Assigner</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const assignedTo = getVal('mAssignDriver') || null;
+                try {
+                    await updateDoc(doc(db, 'orders', id), { assignedTo });
+                    toast('Commande assignée !', 'success');
+                    closeModal();
+                    loadDMData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        // =============================================================
+        // DRIVER DASHBOARD
+        // =============================================================
+        function loadDriverDashboard() {
+            render(`
+                <h2><i class="fas fa-truck"></i> Mes livraisons</h2>
+                <p class="page-desc">Gérez vos tournées et mettez à jour les statuts.</p>
+
+                <div class="cards-grid" id="driverStats"></div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-list-check"></i> Mes commandes</h3>
+                    </div>
+                    <div id="driverOrdersTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+            `);
+            loadDriverData();
+        }
+
+        async function loadDriverData() {
+            try {
+                // Trouver le driver associé à cet utilisateur
+                const driversSnap = await getDocs(query(collection(db, 'drivers'), where('uid', '==', currentUser.uid)));
+                const driver = driversSnap.docs[0] ? { id: driversSnap.docs[0].id, ...driversSnap.docs[0].data() } : null;
+                if (!driver) {
+                    document.getElementById('driverStats').innerHTML =
+                        `<div class="stat-card"><span class="number">⚠️</span><span class="label">Aucun profil livreur</span></div>`;
+                    document.getElementById('driverOrdersTable').innerHTML =
+                        `<div class="empty-state"><i class="fas fa-truck"></i><p>Vous n'avez pas de profil livreur. Contactez l'admin.</p></div>`;
+                    return;
+                }
+
+                // Commandes assignées à ce driver
+                const ordersSnap = await getDocs(query(collection(db, 'orders'), where('assignedTo', '==', driver.id)));
+                allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                document.getElementById('driverStats').innerHTML = `
+                    <div class="stat-card"><span class="number">${driver.online ? '🟢' : '🔴'}</span><span class="label">${driver.online ? 'En ligne' : 'Hors ligne'}</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.length}</span><span class="label">📦 Commandes</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.filter(o => o.status === 'pending' || o.status === 'accepted').length}</span><span class="label">⏳ En cours</span></div>
+                    <div class="stat-card"><span class="number">${allOrders.filter(o => o.status === 'delivered').length}</span><span class="label">✅ Livrées</span></div>
+                `;
+
+                renderDriverOrders(driver.id);
+            } catch (err) {
+                toast('Erreur chargement données driver', 'error');
+                console.error(err);
+            }
+        }
+
+        function renderDriverOrders(driverId) {
+            const container = document.getElementById('driverOrdersTable');
+            if (!allOrders.length) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-list-check"></i><p>Aucune commande assignée.</p></div>`;
+                return;
+            }
+            let html =
+                `<table><thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Actions</th></tr></thead><tbody>`;
+            allOrders.forEach(o => {
+                const client = allUsers.find(u => u.uid === o.clientId);
+                html += `<tr>
+                    <td>${o.id.slice(0, 8)}</td>
+                    <td>${client ? client.name || client.email : o.clientId || ''}</td>
+                    <td>${o.total ? o.total.toFixed(2) + ' €' : '—'}</td>
+                    <td><span class="badge status-${o.status || 'pending'}">${o.status || 'pending'}</span></td>
+                    <td>
+                        ${o.status === 'pending' ? `<button class="btn btn-sm btn-success" onclick="window._updateOrderStatus('${o.id}','accepted')"><i class="fas fa-check"></i> Accepter</button>` : ''}
+                        ${o.status === 'accepted' ? `<button class="btn btn-sm btn-warning" onclick="window._updateOrderStatus('${o.id}','picked')"><i class="fas fa-hand"></i> Récupérer</button>` : ''}
+                        ${o.status === 'picked' ? `<button class="btn btn-sm btn-primary" onclick="window._updateOrderStatus('${o.id}','delivered')"><i class="fas fa-flag"></i> Livrer</button>` : ''}
+                        ${o.status === 'delivered' ? `<span class="badge status-delivered">✅ Livrée</span>` : ''}
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            window._updateOrderStatus = async (id, status) => {
+                try {
+                    await updateDoc(doc(db, 'orders', id), { status });
+                    toast(`Statut mis à jour : ${status}`, 'success');
+                    loadDriverData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        // =============================================================
+        // CLIENT DASHBOARD
+        // =============================================================
+        function loadClientDashboard() {
+            render(`
+                <h2><i class="fas fa-shopping-bag"></i> Boutique</h2>
+                <p class="page-desc">Parcourez les commerces et passez commande.</p>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-store"></i> Commerces disponibles</h3>
+                    </div>
+                    <div id="clientStores"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-list-check"></i> Mes commandes</h3>
+                    </div>
+                    <div id="clientOrders"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement...</p></div></div>
+                </div>
+            `);
+            loadClientData();
+        }
+
+        async function loadClientData() {
+            try {
+                const [storesSnap, ordersSnap] = await Promise.all([
+                    getDocs(collection(db, 'stores')),
+                    getDocs(query(collection(db, 'orders'), where('clientId', '==', currentUser.uid)))
+                ]);
+                allStores = storesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                renderClientStores();
+                renderClientOrders();
+            } catch (err) {
+                toast('Erreur chargement données client', 'error');
+                console.error(err);
+            }
+        }
+
+        function renderClientStores() {
+            const container = document.getElementById('clientStores');
+            if (!allStores.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-store"></i><p>Aucun commerce disponible.</p></div>`;
+                return;
+            }
+            let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">`;
+            allStores.forEach(s => {
+                html += `
+                    <div style="background:#f8fafc;border-radius:16px;padding:1rem;border:1px solid #e2e8f0;">
+                        <div style="font-weight:600;">${s.name || 'Commerce'}</div>
+                        <div style="font-size:0.85rem;color:#64748b;">${s.address || ''}</div>
+                        <div style="font-size:0.85rem;color:#64748b;">${s.tel || ''}</div>
+                        <button class="btn btn-primary btn-sm" style="margin-top:0.7rem;" onclick="window._orderFromStore('${s.id}')">
+                            <i class="fas fa-shopping-cart"></i> Commander
+                        </button>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+            window._orderFromStore = (storeId) => openOrderModal(storeId);
+        }
+
+        function renderClientOrders() {
+            const container = document.getElementById('clientOrders');
+            if (!allOrders.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-list-check"></i><p>Vous n'avez pas encore de commandes.</p></div>`;
+                return;
+            }
+            let html = `<table><thead><tr><th>ID</th><th>Commerce</th><th>Total</th><th>Statut</th></tr></thead><tbody>`;
+            allOrders.forEach(o => {
+                const store = allStores.find(s => s.id === o.storeId);
+                html += `<tr>
+                    <td>${o.id.slice(0, 8)}</td>
+                    <td>${store ? store.name : o.storeId || ''}</td>
+                    <td>${o.total ? o.total.toFixed(2) + ' €' : '—'}</td>
+                    <td><span class="badge status-${o.status || 'pending'}">${o.status || 'pending'}</span></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function openOrderModal(storeId) {
+            const store = allStores.find(s => s.id === storeId);
+            showModal(`
+                <h3><i class="fas fa-shopping-cart"></i> Commander chez ${store ? store.name : 'ce commerce'}</h3>
+                <p class="modal-sub">Décrivez votre commande. Le commerce vous contactera.</p>
+                <label>Description de la commande</label>
+                <textarea id="mOrderDesc" rows="3" placeholder="Détails de votre commande..."></textarea>
+                <label>Montant total estimé (€)</label>
+                <input id="mOrderTotal" type="number" step="0.01" placeholder="0.00" />
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                    <button class="btn btn-primary" id="modalSubmitBtn">Passer commande</button>
+                </div>
+            `);
+            document.getElementById('modalSubmitBtn').onclick = async () => {
+                const description = getVal('mOrderDesc');
+                const total = parseFloat(getVal('mOrderTotal'));
+                if (!description || isNaN(total) || total <= 0) {
+                    toast('Description et montant valide requis.', 'error');
+                    return;
+                }
+                try {
+                    await addDoc(collection(db, 'orders'), {
+                        clientId: currentUser.uid,
+                        storeId: storeId,
+                        description,
+                        total,
+                        status: 'pending',
+                        assignedTo: null,
+                        createdAt: serverTimestamp()
+                    });
+                    toast('Commande passée avec succès !', 'success');
+                    closeModal();
+                    loadClientData();
+                } catch (err) { toast(err.message, 'error'); }
+            };
+        }
+
+        // =============================================================
+        // INIT
+        // =============================================================
+        console.log('🚚 Livreely — Plateforme de livraison');
+        console.log('📌 Connecté avec Firebase');
+    </script>
+
 </body>
 </html>
