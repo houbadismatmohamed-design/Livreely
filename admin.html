@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Livreely - Admin</title>
+  <style>
+    /* Styles identiques aux précédents – je les reprends ici pour gagner de la place */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 440px; margin: 0 auto; min-height: 100vh; position: relative; padding: 0 16px 100px; }
+    .orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .orb { position: absolute; filter: blur(90px); opacity: .55; border-radius: 50%; }
+    .o1 { width: 300px; height: 300px; background: radial-gradient(circle at 30% 30%, #22ff88, transparent 60%); top: -80px; left: -90px; animation: float 14s ease-in-out infinite; }
+    .o2 { width: 340px; height: 340px; background: radial-gradient(circle at 70% 70%, #ff7a2f, transparent 60%); bottom: -100px; right: -120px; animation: float 18s ease-in-out infinite reverse; }
+    @keyframes float { 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(20px)} }
+    .view { position: relative; z-index: 1; padding-top: 26px; }
+    .view[hidden] { display: none !important; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .login-card { padding: 28px 22px; margin-top: 36px; }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .logo {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: linear-gradient(135deg,#22ff88,#16c064);
+      display: grid; place-items: center; color: #0f172a;
+      box-shadow: 0 8px 20px rgba(34,255,136,.3);
+    }
+    .brand h1 { font-size: 20px; margin: 0; font-weight: 800; }
+    .brand p { margin: 3px 0 0; font-size: 12px; color: #94a3b8; }
+    label { display: block; font-size: 13px; color: #cbd5e1; margin: 14px 0 6px; }
+    .input {
+      width: 100%; padding: 14px; border-radius: 14px;
+      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14);
+      color: #fff; font-size: 15px; outline: none;
+    }
+    .input:focus { border-color: #22ff88; box-shadow: 0 0 0 3px rgba(34,255,136,.15); }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-weight: 700; font-size: 15px; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg,#22ff88,#1fd17a); color: #052e16; margin-top: 18px; box-shadow: 0 8px 22px rgba(34,255,136,.28); }
+    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,.15); color: #e2e8f0; }
+    .btn-sm { padding: 9px 12px; font-size: 13px; border-radius: 11px; width: auto; }
+    .btn-accept { background: linear-gradient(135deg,#22ff88,#1ad67a); color: #052e16; }
+    .btn-danger { background: linear-gradient(135deg,#ff5a5a,#cc3333); color: #fff; }
+    .error {
+      margin-top: 12px; padding: 10px 12px; border-radius: 12px;
+      background: rgba(255,122,47,.12); border: 1px solid rgba(255,122,47,.35);
+      color: #ffd1b8; font-size: 13px; display: none;
+    }
+    .error.show { display: block; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .greet { font-size: 24px; font-weight: 800; }
+    .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 13px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      display: grid; place-items: center; cursor: pointer;
+    }
+    .tabs {
+      position: sticky; top: 10px; z-index: 5; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+      padding: 8px; background: rgba(15,23,42,.7); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,.08); border-radius: 16px; margin-bottom: 14px;
+    }
+    .tab { padding: 10px; border-radius: 12px; background: transparent; border: none; color: #94a3b8; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .tab.active { background: rgba(255,255,255,.1); color: #fff; }
+    .panel { display: none; animation: fade .28s ease; }
+    .panel.active { display: block; }
+    @keyframes fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .order { padding: 15px; margin-bottom: 12px; }
+    .order-head { display: flex; gap: 12px; align-items: flex-start; }
+    .icon { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; }
+    .icon.restaurant { background: rgba(34,255,136,.15); color: #22ff88; border: 1px solid rgba(34,255,136,.3); }
+    .icon.colis { background: rgba(255,122,47,.15); color: #ff7a2f; border: 1px solid rgba(255,122,47,.3); }
+    .icon.courses { background: rgba(148,163,184,.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); }
+    .oh-main { flex: 1; min-width: 0; }
+    .oh-id { font-weight: 800; font-size: 14px; }
+    .oh-route { font-size: 13px; color: #cbd5e1; margin-top: 3px; }
+    .oh-price { font-weight: 800; color: #22ff88; font-size: 14px; margin-left: 6px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 12px; margin: 11px 0 13px; font-size: 12px; color: #94a3b8; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .empty { padding: 36px 20px; text-align: center; color: #94a3b8; font-size: 14px; }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #0b1220; border: 1px solid rgba(255,255,255,.15);
+      padding: 12px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      z-index: 60; font-size: 14px; font-weight: 600; display: none;
+    }
+    .toast.show { display: block; animation: up .3s ease; }
+    @keyframes up { from{opacity:0;transform:translate(-50%,10px)} to{opacity:1;transform:translate(-50%,0)} }
+    .admin-section { margin-bottom: 20px; }
+    .admin-section h3 { margin: 0 0 12px; font-size: 16px; }
+    .livreur-form { display: flex; flex-direction: column; gap: 8px; }
+    .h-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 10px; }
+    .badge { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .b-on { background: rgba(34,255,136,.15); color: #22ff88; border: 1px solid rgba(34,255,136,.3); }
+    .b-off { background: rgba(148,163,184,.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,.25); }
+    .b-gps-off { background: rgba(255,122,47,.15); color: #ff7a2f; border: 1px solid rgba(255,122,47,.3); }
+    .dot-s { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="orbs"><div class="orb o1"></div><div class="orb o2"></div></div>
+
+  <!-- LOGIN -->
+  <section id="loginView" class="view">
+    <div class="card login-card">
+      <div class="brand">
+        <div class="logo">🚀</div>
+        <div>
+          <h1>Livreely</h1>
+          <p>Espace Admin</p>
+        </div>
+      </div>
+      <form id="loginForm" autocomplete="off">
+        <label>Email</label>
+        <input id="loginEmail" class="input" type="email" placeholder="admin@livreely.com" required>
+        <label>Mot de passe</label>
+        <input id="loginPwd" type="password" class="input" placeholder="••••••••" required>
+        <button class="btn btn-primary" type="submit">Se connecter</button>
+        <div id="loginError" class="error">Identifiants incorrects</div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="adminView" class="view" hidden>
+    <div class="topbar">
+      <div>
+        <div class="greet">Console Admin</div>
+        <div class="sub">Supervision Livreely</div>
+      </div>
+      <button id="logoutBtn" class="icon-btn">⏻</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="adminPending">Commandes en attente</button>
+      <button class="tab" data-tab="adminUsers">Utilisateurs</button>
+      <button class="tab" data-tab="adminActive">Commandes actives</button>
+    </div>
+    <div id="panel-adminPending" class="panel active"></div>
+    <div id="panel-adminUsers" class="panel"></div>
+    <div id="panel-adminActive" class="panel"></div>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc, getDoc, setDoc, updateDoc,
+    collection, query, where, onSnapshot, getDocs, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWtqGUL7LaCvEfN7CWOZfG3uwG123AaGk",
+    authDomain: "livreely.firebaseapp.com",
+    projectId: "livreely",
+    storageBucket: "livreely.firebasestorage.app",
+    messagingSenderId: "1034680381809",
+    appId: "1:1034680381809:web:b69e5ff32096543bedc6d0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // DOM
+  const loginView = document.getElementById('loginView');
+  const adminView = document.getElementById('adminView');
+  const loginForm = document.getElementById('loginForm');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPwd = document.getElementById('loginPwd');
+  const loginError = document.getElementById('loginError');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const toastEl = document.getElementById('toast');
+
+  let currentUser = null;
+  let unsubscribeAll = null;
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+
+  async function loginUser(email, pwd) {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pwd);
+      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!userDoc.exists()) {
+        await signOut(auth);
+        loginError.textContent = 'Utilisateur non enregistré.';
+        loginError.classList.add('show');
+        return;
+      }
+      const data = userDoc.data();
+      if (data.role !== 'admin') {
+        await signOut(auth);
+        loginError.textContent = 'Accès réservé aux administrateurs.';
+        loginError.classList.add('show');
+        return;
+      }
+      toast('Bienvenue Admin !');
+    } catch (err) {
+      loginError.textContent = err.message || 'Échec de connexion';
+      loginError.classList.add('show');
+    }
+  }
+
+  function logout() {
+    signOut(auth);
+    if (unsubscribeAll) { unsubscribeAll(); unsubscribeAll = null; }
+    currentUser = null;
+    loginView.hidden = false;
+    adminView.hidden = true;
+    toast('Déconnecté');
+  }
+
+  function renderAdmin() {
+    loginView.hidden = true;
+    adminView.hidden = false;
+    switchAdminTab('adminPending');
+    subscribeAll();
+  }
+
+  function switchAdminTab(tab) {
+    document.querySelectorAll('#adminView .tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('#adminView .panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    if (tab === 'adminPending') renderPendingOrders();
+    if (tab === 'adminUsers') renderUsers();
+    if (tab === 'adminActive') renderActiveOrders();
+  }
+
+  function subscribeAll() {
+    if (unsubscribeAll) unsubscribeAll();
+    // Écouter toutes les collections pour rafraîchir
+    const q = query(collection(db, 'orders'));
+    unsubscribeAll = onSnapshot(q, () => {
+      const activeTab = document.querySelector('#adminView .tab.active');
+      if (activeTab) switchAdminTab(activeTab.dataset.tab);
+    }, err => console.error(err));
+  }
+
+  // --- Commandes en attente ---
+  async function renderPendingOrders() {
+    const wrap = document.getElementById('panel-adminPending');
+    const q = query(collection(db, 'orders'), where('status', '==', 'en_attente'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      wrap.innerHTML = '<div class="empty">Aucune commande en attente.</div>';
+      return;
+    }
+    let html = '';
+    snap.forEach(doc => {
+      const o = doc.data();
+      const id = doc.id;
+      html += `
+        <div class="card order" style="margin-bottom:12px">
+          <div class="order-head">
+            <div class="icon ${o.type}">${ICONS[o.type]}</div>
+            <div class="oh-main">
+              <div class="oh-id">#${id} • ${o.client}</div>
+              <div class="oh-route">${o.from} → ${o.to}</div>
+            </div>
+          </div>
+          <div class="meta">${(o.items || []).join(' • ')}</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <input type="number" placeholder="Prix livraison (DA)" id="fee-${id}" class="input" style="width:120px;padding:8px" value="${o.fee || ''}">
+            <button class="btn btn-sm btn-accept" onclick="window.approveOrder('${id}')">Approuver</button>
+            <button class="btn btn-sm btn-ghost" onclick="window.rejectOrder('${id}')">Refuser</button>
+          </div>
+        </div>
+      `;
+    });
+    wrap.innerHTML = html;
+  }
+
+  window.approveOrder = async function(id) {
+    const feeInput = document.getElementById('fee-' + id);
+    const fee = parseInt(feeInput.value, 10);
+    if (!fee || fee <= 0) { toast('Veuillez entrer un prix valide'); return; }
+    try {
+      await updateDoc(doc(db, 'orders', id), { fee, status: 'disponible' });
+      toast('Commande approuvée');
+      renderPendingOrders();
+    } catch(e) { toast('Erreur: ' + e.message); }
+  };
+
+  window.rejectOrder = async function(id) {
+    try {
+      await updateDoc(doc(db, 'orders', id), { status: 'refusee' });
+      toast('Commande refusée');
+      renderPendingOrders();
+    } catch(e) { toast('Erreur: ' + e.message); }
+  };
+
+  // --- Commandes actives ---
+  async function renderActiveOrders() {
+    const wrap = document.getElementById('panel-adminActive');
+    const q = query(collection(db, 'orders'), where('status', 'not-in', ['disponible', 'en_attente', 'refusee']));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      wrap.innerHTML = '<div class="empty">Aucune commande active.</div>';
+      return;
+    }
+    let html = '';
+    for (const docSnap of snap.docs) {
+      const o = docSnap.data();
+      const id = docSnap.id;
+      let driverName = '-';
+      if (o.assignedTo) {
+        const driverDoc = await getDoc(doc(db, 'drivers', o.assignedTo));
+        if (driverDoc.exists()) driverName = driverDoc.data().name || o.assignedTo;
+      }
+      html += `
+        <div class="card order">
+          <div class="order-head">
+            <div class="icon ${o.type}">${ICONS[o.type]}</div>
+            <div class="oh-main">
+              <div class="oh-id">#${id}</div>
+              <div class="oh-route">${o.from} → ${o.to}</div>
+              <div class="meta">Livreur: ${driverName} • ${o.status}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    wrap.innerHTML = html;
+  }
+
+  // --- Utilisateurs ---
+  async function renderUsers() {
+    const wrap = document.getElementById('panel-adminUsers');
+    const snap = await getDocs(collection(db, 'users'));
+    const users = [];
+    snap.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
+
+    if (users.length === 0) {
+      wrap.innerHTML = '<div class="empty">Aucun utilisateur.</div>';
+      return;
+    }
+
+    let html = `
+      <div class="admin-section">
+        <h3>Tous les utilisateurs</h3>
+        <div id="usersList">
+    `;
+    users.forEach(u => {
+      const roleBadge = u.role === 'admin' ? '🔴 Admin' : u.role === 'manager' ? '🟠 Manager' : u.role === 'driver' ? '🟢 Livreur' : '🔵 Client';
+      html += `
+        <div class="card h-item" style="margin-bottom:8px">
+          <div>
+            <b>${u.name || u.id}</b> (${u.id})<br>
+            <span style="color:#94a3b8;font-size:12px">${u.email} • ${roleBadge}</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-ghost" onclick="window.changeRole('${u.uid}')">🔁 Rôle</button>
+            <button class="btn btn-sm btn-danger" onclick="window.deleteUser('${u.uid}')">🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div></div>`;
+    wrap.innerHTML = html;
+  }
+
+  window.changeRole = async function(uid) {
+    const newRole = prompt('Nouveau rôle (admin, manager, driver, customer) :');
+    if (!newRole) return;
+    try {
+      await updateDoc(doc(db, 'users', uid), { role: newRole });
+      toast('Rôle mis à jour');
+      renderUsers();
+    } catch(e) { toast('Erreur: ' + e.message); }
+  };
+
+  window.deleteUser = async function(uid) {
+    if (!confirm('Supprimer cet utilisateur ?')) return;
+    try {
+      await deleteDoc(doc(db, 'users', uid));
+      // On ne supprime pas le compte Auth ici (nécessite admin SDK)
+      toast('Utilisateur supprimé (Firestore)');
+      renderUsers();
+    } catch(e) { toast('Erreur: ' + e.message); }
+  };
+
+  // ICONS
+  const ICONS = {
+    restaurant:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h1a4 4 0 0 0 4-4V2"/><path d="M7 2v7"/><path d="M12 2v10c0 2.2 1.8 4 4 4s4-1.8 4-4V2"/></svg>`,
+    colis:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`,
+    courses:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+  };
+
+  // --- Auth state ---
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+        toast('Accès non autorisé.');
+        logout();
+        return;
+      }
+      renderAdmin();
+    } else {
+      if (unsubscribeAll) { unsubscribeAll(); unsubscribeAll = null; }
+      currentUser = null;
+      loginView.hidden = false;
+      adminView.hidden = true;
+      loginError.classList.remove('show');
+    }
+  });
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    loginError.classList.remove('show');
+    const email = loginEmail.value.trim();
+    const pwd = loginPwd.value.trim();
+    if (!email || !pwd) {
+      loginError.textContent = 'Veuillez remplir tous les champs.';
+      loginError.classList.add('show');
+      return;
+    }
+    loginUser(email, pwd);
+  });
+
+  logoutBtn.addEventListener('click', logout);
+
+  document.querySelectorAll('#adminView .tab').forEach(b => {
+    b.addEventListener('click', () => switchAdminTab(b.dataset.tab));
+  });
+
+  console.log('Livreely - Admin app ready');
+</script>
+</body>
+</html>
