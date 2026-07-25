@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - LIVRILY v2.1</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b)}
+.loginBox{background:white;color:#1f2937;padding:30px;border-radius:18px;width:95%;max-width:380px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
+.loginBox h2{text-align:center;margin-bottom:15px}
+.loginBox input{width:100%;padding:13px;border:1px solid #ccc;border-radius:10px;background:#f1f5f9;color:#111;font-size:14px;margin-top:10px;outline:none}
+.btn{width:100%;padding:13px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;margin-top:10px;background:#2563EB}
+.btn-success{background:#16A34A}.btn-danger{background:#DC2626}
+.small{font-size:11px;color:#64748B;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="loginBox">
+<div style="width:70px;height:70px;background:#2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:white;font-size:32px;font-weight:bold;">D</div>
+<h2>LIVRILY v2.1 Login</h2>
+<div id="loginForm">
+<input type="email" id="email" placeholder="Email" autocomplete="off">
+<input type="password" id="password" placeholder="Password" autocomplete="new-password">
+<button class="btn" type="button" onclick="login()">LOGIN</button>
+<p id="error" style="color:#DC2626;text-align:center;margin-top:10px;font-size:13px;"></p>
+</div>
+<div id="loggedInBox" style="display:none;text-align:center;">
+<p style="font-size:13px;margin-bottom:10px;">Logged in as:</p>
+<b id="loggedEmail" style="color:#2563EB;"></b><br>
+<span id="loggedRole" style="background:#2563EB;color:white;padding:3px 10px;border-radius:12px;font-size:11px;margin-top:6px;display:inline-block;"></span>
+<div style="margin-top:15px;display:grid;gap:8px;">
+<button class="btn btn-success" type="button" onclick="goManager()">Go to Manager.html</button>
+<button class="btn" style="background:#38BDF8;color:#0F172A;" type="button" onclick="goDriver()">Go to Driver.html</button>
+<button class="btn btn-danger" type="button" onclick="doLogout()">Logout - Switch Account</button>
+</div>
+<p class="small">If you see old version, hard refresh: Ctrl+F5<br>Current version: v2.1 STABLE 2026</p>
+</div>
+<p class="small">Manager & Driver same login<br>All fees editable in Manager Settings</p>
+</div>
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+  authDomain: "livrily-a6e7e.firebaseapp.com",
+  projectId: "livrily-a6e7e",
+  storageBucket: "livrily-a6e7e.firebasestorage.app",
+  messagingSenderId: "904979289112",
+  appId: "1:904979289112:web:9981377a9500b940091f6d"
+};
+let app;
+try{ if(getApps().length===0) app=initializeApp(firebaseConfig); else app=getApp(); }catch(e){ app=initializeApp(firebaseConfig); }
+const auth = getAuth(app);
+const db = getFirestore(app);
+const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
+function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    document.getElementById('loginForm').style.display='block';
+    document.getElementById('loggedInBox').style.display='none';
+    return;
+  }
+  try{
+    if(!isManager(user)){
+      let snap = await getDoc(doc(db,"drivers",user.uid));
+      if(snap.exists() && snap.data().active===false){
+        document.getElementById('error').innerText='Account deactivated';
+        await signOut(auth);
+        return;
+      }
+    }
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('loggedInBox').style.display='block';
+    document.getElementById('loggedEmail').innerText=user.email;
+    document.getElementById('loggedRole').innerText=isManager(user)?'MANAGER':'DRIVER';
+  }catch(e){ console.error(e); }
+});
+
+window.login=async()=>{
+  let email=document.getElementById('email').value.trim();
+  let pass=document.getElementById('password').value;
+  let err=document.getElementById('error');
+  err.innerText='';
+  if(!email||!pass){ err.innerText='Enter email & password'; return; }
+  try{ await signInWithEmailAndPassword(auth,email,pass); }
+  catch(e){ err.innerText=e.message; }
+}
+window.goManager=()=> location.href='Manager.html?v=2.1';
+window.goDriver=()=> location.href='Driver.html?v=2.1';
+window.doLogout=async()=>{ await signOut(auth); location.reload(); }
+</script>
+</body>
+</html>
