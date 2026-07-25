@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Manager - All in One</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{background:#0F172A;color:white;min-height:100vh}
+header{background:#1E293B;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;box-shadow:0 5px 15px rgba(0,0,0,.3)}
+.logo{font-weight:bold;color:#38BDF8;font-size:18px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{color:#CBD5E1;background:#0F172A;border:none;padding:8px 12px;border-radius:10px;font-size:12px;cursor:pointer;transition:.2s}
+nav button:hover,nav button.active{background:#2563EB;color:white}
+.container{max-width:1200px;margin:auto;padding:16px}
+.card{background:#1E293B;padding:18px;border-radius:16px;margin-bottom:16px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.card h2{color:#38BDF8;margin-bottom:12px;font-size:16px}
+input,select,textarea{width:100%;padding:12px;border:none;outline:none;border-radius:10px;background:#334155;color:white;font-size:14px;margin-top:6px}
+label{display:block;margin-top:12px;font-size:13px;color:#CBD5E1}
+.btn{padding:10px 16px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;transition:.2s;font-size:13px}
+.btn-primary{background:#2563EB}
+.btn-success{background:#16A34A}
+.btn-danger{background:#DC2626}
+.btn-warning{background:#F59E0B}
+.btn:hover{opacity:.9}
+.summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.summaryCard{background:#0F172A;border:1px solid #334155;border-radius:12px;padding:14px;text-align:center}
+.summaryCard h3{color:#94A3B8;font-size:11px;margin-bottom:6px}
+.summaryCard h1{color:#38BDF8;font-size:20px}
+.row{display:flex;justify-content:space-between;padding:9px;background:#0F172A;border-radius:8px;margin-top:6px;font-size:13px}
+table{width:100%;border-collapse:collapse}
+th{background:#2563EB;padding:10px;color:white;font-size:12px}
+td{padding:10px;border-bottom:1px solid #334155;text-align:center;font-size:12px}
+tr:hover{background:#1e2d4a}
+#loginScreen{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b)}
+.loginBox{background:white;color:#1f2937;padding:30px;border-radius:18px;width:95%;max-width:380px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
+.loginBox h2{text-align:center;margin-bottom:15px}
+.loginBox input{background:#f1f5f9;color:#111;border:1px solid #ccc}
+.loginBox .btn{width:100%;margin-top:14px;padding:12px}
+.tab{display:none}
+.tab.active{display:block}
+.badge{padding:4px 8px;border-radius:12px;font-size:11px;font-weight:bold}
+.badge-green{background:#16A34A}
+.badge-orange{background:#F59E0B}
+.badge-gray{background:#64748B}
+.badge-red{background:#DC2626}
+@media(max-width:700px){th,td{padding:6px;font-size:11px} nav button{font-size:10px;padding:6px 8px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+<div class="loginBox">
+<div style="width:70px;height:70px;background:#2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:white;font-size:32px;font-weight:bold;">D</div>
+<h2>Delivery Manager</h2>
+<p style="text-align:center;color:#64748B;font-size:12px;margin-bottom:15px;">Manager: houbadismatmohamed@gmail.com<br>Drivers: created by manager</p>
+<input type="email" id="email" placeholder="Email" value="houbadismatmohamed@gmail.com">
+<input type="password" id="password" placeholder="Password" value="Iso1997@13**">
+<button class="btn btn-primary" onclick="login()">LOGIN</button>
+<p id="loginError" style="color:#DC2626;text-align:center;margin-top:10px;font-size:13px;"></p>
+<p style="text-align:center;margin-top:12px;color:#94A3B8;font-size:11px;">Single HTML - Manager & Driver in one login<br>All fees editable in Settings</p>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+<header>
+<div class="logo">🚚 LIVRILY <span id="roleBadge" style="font-size:10px;background:#2563EB;padding:3px 8px;border-radius:10px;margin-left:8px;"></span></div>
+<div style="display:flex;align-items:center;gap:10px;">
+<span id="userEmail" style="font-size:12px;color:#94A3B8;"></span>
+<button class="btn btn-danger" onclick="logout()">Logout</button>
+</div>
+</header>
+
+<nav id="managerNav" style="background:#1E293B;padding:10px;display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:56px;z-index:999;">
+<button onclick="showTab('dashboard')" id="btn-dashboard" class="active">📊 Dashboard</button>
+<button onclick="showTab('new-order')" id="btn-new-order">📦 New Order</button>
+<button onclick="showTab('orders')" id="btn-orders">📋 Orders</button>
+<button onclick="showTab('drivers')" id="btn-drivers">🚗 Drivers</button>
+<button onclick="showTab('settlement')" id="btn-settlement">💰 Settlement</button>
+<button onclick="showTab('accounting')" id="btn-accounting">💵 Accounting</button>
+<button onclick="showTab('settings')" id="btn-settings">⚙️ Settings</button>
+</nav>
+
+<nav id="driverNav" style="background:#1E293B;padding:10px;display:none;gap:6px;position:sticky;top:56px;z-index:999;">
+<button onclick="showTab('driver-dashboard')" id="btn-driver-dashboard" class="active">🛵 My Dashboard</button>
+<button onclick="showTab('driver-orders')" id="btn-driver-orders">📋 My Orders</button>
+</nav>
+
+<div class="container">
+<!-- MANAGER TABS -->
+<div id="tab-dashboard" class="tab active">
+<div class="card"><h2>📊 Overview <span id="clock" style="float:right;font-size:11px;color:#94A3B8;"></span></h2>
+<div class="summaryGrid">
+<div class="summaryCard"><h3>Total Orders</h3><h1 id="dash-totalOrders">0</h1></div>
+<div class="summaryCard"><h3>To Collect From Drivers</h3><h1 id="dash-toCollect" style="color:#F59E0B;">0 DA</h1></div>
+<div class="summaryCard"><h3>Your Income</h3><h1 id="dash-yourIncome" style="color:#22C55E;">0 DA</h1></div>
+<div class="summaryCard"><h3>Drivers Kept</h3><h1 id="dash-driverKept">0 DA</h1></div>
+<div class="summaryCard"><h3>Active Drivers</h3><h1 id="dash-activeDrivers">0</h1></div>
+<div class="summaryCard"><h3>Client Fees</h3><h1 id="dash-clientFees">0 DA</h1></div>
+</div>
+</div>
+<div class="card"><h2>🚗 Drivers Balances</h2><div id="dash-driversList"></div></div>
+<div class="card"><h2>📋 Recent Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Qty</th><th>Delivery</th><th>Your Income</th></tr></thead><tbody id="dash-ordersBody"></tbody></table></div></div>
+</div>
+
+<div id="tab-new-order" class="tab">
+<div class="card"><h2>👤 Customer</h2>
+<label>Name</label><input id="customerName" value="Ahmed - 2 sandwich + 2 soda">
+<label>Phone</label><input id="customerPhone" placeholder="0550XXXXXX">
+<label>Address</label><textarea id="customerAddress" placeholder="City center"></textarea>
+</div>
+<div class="card"><h2>📦 Products - <span id="feePerProductLabel">10 DA</span> per product (editable in Settings)</h2>
+<div style="overflow-x:auto;"><table><thead><tr><th>Product</th><th>Qty</th><th></th></tr></thead><tbody id="productsBody"><tr><td><input class="productName" value="Sandwich"></td><td><input type="number" class="qty" value="2" min="1" oninput="updateSummary()"></td><td><button class="btn btn-danger" onclick="removeRow(this)">❌</button></td></tr><tr><td><input class="productName" value="Soda"></td><td><input type="number" class="qty" value="2" min="1" oninput="updateSummary()"></td><td><button class="btn btn-danger" onclick="removeRow(this)">❌</button></td></tr></tbody></table></div>
+<button class="btn btn-primary" style="margin-top:10px;" onclick="addProduct()">➕ Add Product</button>
+</div>
+<div class="card"><h2>💵 Delivery Price</h2><label>Delivery Price DA (driver collects this)</label><input type="number" id="deliveryPrice" value="300" oninput="updateSummary()"></div>
+<div class="card"><h2>🚗 Driver</h2><select id="driverSelect"></select></div>
+<div class="card"><h2>💰 Breakdown - Using Current Settings</h2>
+<div class="row"><span>Qty Total</span><b id="sum-qty">4</b></div>
+<div class="row"><span>Client App Fee</span><b id="sum-clientFee">40 DA</b></div>
+<div class="row"><span>Delivery Price</span><b id="sum-delivery">300 DA</b></div>
+<div class="row" style="background:#1e3a5f;"><span>Client Total Pays</span><b id="sum-clientTotal">340 DA</b></div>
+<div class="row"><span>Manager 40%</span><b id="sum-managerFee">120 DA</b></div>
+<div class="row"><span>Driver App Fee</span><b id="sum-driverApp">10 DA</b></div>
+<div class="row" style="background:#7c2d12;"><span>Driver Owes You / Your Income</span><b id="sum-driverOwes" style="color:#F59E0B;">170 DA</b></div>
+<div class="row" style="border:1px solid #22C55E;"><span>Driver Keeps</span><b id="sum-driverKeeps" style="color:#22C55E;">170 DA</b></div>
+</div>
+<button class="btn btn-success" style="width:100%;padding:14px;" onclick="saveOrder()">💾 SAVE ORDER</button>
+</div>
+
+<div id="tab-orders" class="tab">
+<div class="card"><h2>🔍 Search</h2><input id="ordersSearch" placeholder="Customer, driver..." onkeyup="renderOrders()"></div>
+<div class="card"><h2>📋 All Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Qty</th><th>Delivery</th><th>Client Fee</th><th>Your Income</th><th>Keeps</th><th>Date</th><th>Del</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
+</div>
+
+<div id="tab-drivers" class="tab">
+<div class="card"><h2>🚗 Drivers List</h2><div id="driversGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;"></div></div>
+</div>
+
+<div id="tab-settlement" class="tab">
+<div class="card"><h2>💰 Settlement - Driver Collects All, You Take Your Share & Reset to 0</h2>
+<div class="summaryGrid"><div class="summaryCard"><b id="set-toCollect" style="color:#F59E0B;">0 DA</b>To Collect</div><div class="summaryCard"><b id="set-collected">0 DA</b>Collected</div><div class="summaryCard"><b id="set-orders">0</b>Orders</div><div class="summaryCard"><b id="set-drivers">0</b>Drivers</div></div>
+</div>
+<div id="settlementGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;"></div>
+<div class="card"><h2>📜 Settlement History</h2><div id="settlementHistory"></div></div>
+</div>
+
+<div id="tab-accounting" class="tab">
+<div class="card"><h2>📅 Filter</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input type="date" id="acc-date" onchange="renderAccounting()"><input type="text" id="acc-search" placeholder="Search..." onkeyup="renderAccounting()"></div></div>
+<div class="summaryGrid"><div class="summaryCard"><b id="acc-totalOrders">0</b>Orders</div><div class="summaryCard"><b id="acc-clientFees">0 DA</b>Client Fees</div><div class="summaryCard"><b id="acc-managerFees">0 DA</b>Manager 40%</div><div class="summaryCard"><b id="acc-yourIncome">0 DA</b>Your Income</div><div class="summaryCard"><b id="acc-toCollect">0 DA</b>To Collect</div></div>
+<div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Qty</th><th>Delivery</th><th>Client Fee</th><th>Manager</th><th>Your Income</th><th>Keeps</th><th>Date</th></tr></thead><tbody id="acc-body"></tbody></table></div></div>
+</div>
+
+<div id="tab-settings" class="tab">
+<div class="card"><h2>🏢 Company Info</h2>
+<label>Company Name</label><input id="set-companyName">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div><label>Phone</label><input id="set-companyPhone"></div><div><label>Address</label><input id="set-companyAddress"></div></div>
+</div>
+
+<div class="card"><h2>💰 Fee Settings - Change Anytime (Future orders use new values)</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+<div><label>Client Fee Per Product (DA)</label><input type="number" id="set-clientFee" value="10" min="0" oninput="updateSettingsExample()"></div>
+<div><label>Driver App Fee Per Order (DA)</label><input type="number" id="set-driverApp" value="10" min="0" oninput="updateSettingsExample()"></div>
+<div><label>Manager Fee % of Delivery</label><input type="number" id="set-managerPct" value="40" min="0" max="100" oninput="updateSettingsExample()"></div>
+<div><label>Default Delivery Price (DA)</label><input type="number" id="set-defaultDelivery" value="300" min="0" oninput="updateSettingsExample()"></div>
+</div>
+<div style="margin-top:12px;padding:12px;background:#0F172A;border-radius:10px;font-size:12px;" id="settingsExample"></div>
+<button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="saveSettings()">💾 Save Fee Settings</button>
+</div>
+
+<div class="card"><h2>👥 Driver Management - Add / Edit / Delete / Activate / Deactivate</h2>
+<div style="background:#0F172A;padding:14px;border-radius:12px;margin-bottom:12px;">
+<h3 style="color:#38BDF8;margin-bottom:10px;" id="driverFormTitle">➕ Add New Driver</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+<div><label>Name *</label><input id="drv-name" placeholder="Karim"></div>
+<div><label>Phone</label><input id="drv-phone" placeholder="0550XXXXXX"></div>
+<div><label>Vehicle</label><input id="drv-vehicle" placeholder="Honda SH125"></div>
+<div><label>Email * (for login)</label><input id="drv-email" type="email" placeholder="karim@driver.com"></div>
+<div><label>Password * (min 6 chars)</label><input id="drv-password" type="password" placeholder="123456"></div>
+<div><label>Status</label><select id="drv-active"><option value="true">✅ Active</option><option value="false">❌ Deactivated</option></select></div>
+</div>
+<button class="btn btn-success" style="width:100%;margin-top:12px;" onclick="saveDriver()" id="drv-saveBtn">Create Driver Account</button>
+<button class="btn" style="background:#334155;width:100%;margin-top:6px;display:none;" onclick="cancelEditDriver()" id="drv-cancelBtn">Cancel Edit</button>
+<p style="font-size:11px;color:#94A3B8;margin-top:8px;">Creating driver creates Firebase Auth account + Firestore driver doc. Driver can login with email/password. Deactivated drivers cannot login.</p>
+</div>
+<div id="settingsDriversGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;"></div>
+</div>
+
+<div class="card"><h2>🔥 Firebase Info</h2>
+<p style="font-size:12px;color:#94A3B8;">Project: livrily-a6e7e<br>Manager UID: 69rlujJgE6X8osQj5MjlhA3BrV43<br>All data saved in Firestore collections: drivers, orders, settlements, settings</p>
+</div>
+</div>
+
+<!-- DRIVER TABS -->
+<div id="tab-driver-dashboard" class="tab">
+<div class="card"><h2>💰 Your Balance</h2><h1 id="driver-owe" style="text-align:center;color:#F59E0B;font-size:32px;">0 DA</h1><p style="text-align:center;color:#94A3B8;font-size:12px;">You owe this to manager. When you go back, manager takes it and resets to 0.</p><div id="driver-breakdown"></div></div>
+<div class="card"><h2>📊 Today's Stats</h2><div class="summaryGrid"><div class="summaryCard"><b id="driver-completed">0</b>Orders</div><div class="summaryCard"><b id="driver-kept" style="color:#22C55E;">0 DA</b>You Kept</div><div class="summaryCard"><b id="driver-totalCollected">0 DA</b>Collected</div></div></div>
+</div>
+<div id="tab-driver-orders" class="tab">
+<div class="card"><h2>📋 My Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Qty</th><th>Delivery</th><th>Client Total</th><th>You Owe</th><th>You Keep</th><th>Date</th></tr></thead><tbody id="driver-ordersBody"></tbody></table></div></div>
+</div>
+
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, serverTimestamp, where, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+  authDomain: "livrily-a6e7e.firebaseapp.com",
+  projectId: "livrily-a6e7e",
+  storageBucket: "livrily-a6e7e.firebasestorage.app",
+  messagingSenderId: "904979289112",
+  appId: "1:904979289112:web:9981377a9500b940091f6d"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Secondary app for creating driver accounts without logging out manager
+const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = getAuth(secondaryApp);
+
+const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
+
+let currentUser = null;
+let currentRole = null;
+let settings = {clientFeePerProduct:10, driverAppFee:10, managerFeePercent:40, defaultDeliveryPrice:300, companyName:"Livrily Delivery", companyPhone:"", companyAddress:""};
+let driversCache = [];
+let ordersCache = [];
+let settlementsCache = [];
+let editingDriverId = null;
+
+function isManager(user){
+  return user && (user.uid===MANAGER_UID || user.email===MANAGER_EMAIL);
+}
+
+// Auth
+window.login = async ()=>{
+  let email=document.getElementById('email').value.trim();
+  let pass=document.getElementById('password').value;
+  let errEl=document.getElementById('loginError');
+  errEl.innerText='';
+  if(!email||!pass){errEl.innerText='Enter email & password';return;}
+  try{
+    let cred=await signInWithEmailAndPassword(auth,email,pass);
+  }catch(e){ errEl.innerText=e.message; }
+}
+
+window.logout = async ()=>{
+  await signOut(auth);
+  location.reload();
+}
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('app').style.display='none';
+    return;
+  }
+  // Check if driver deactivated
+  if(!isManager(user)){
+    let driverDoc = await getDoc(doc(db,"drivers",user.uid));
+    if(driverDoc.exists()){
+      let d=driverDoc.data();
+      if(d.active===false){
+        await signOut(auth);
+        document.getElementById('loginError').innerText='Your account is deactivated. Contact manager.';
+        document.getElementById('loginScreen').style.display='flex';
+        document.getElementById('app').style.display='none';
+        return;
+      }
+    }
+  }
+
+  currentUser=user;
+  currentRole = isManager(user) ? 'manager' : 'driver';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userEmail').innerText=user.email;
+  document.getElementById('roleBadge').innerText=currentRole.toUpperCase();
+  
+  if(currentRole==='manager'){
+    document.getElementById('managerNav').style.display='flex';
+    document.getElementById('driverNav').style.display='none';
+    initManagerListeners();
+    showTab('dashboard');
+  }else{
+    document.getElementById('managerNav').style.display='none';
+    document.getElementById('driverNav').style.display='flex';
+    initDriverListeners();
+    showTab('driver-dashboard');
+  }
+  startClock();
+});
+
+function startClock(){
+  setInterval(()=>{ let el=document.getElementById('clock'); if(el) el.innerText=new Date().toLocaleString(); },1000);
+}
+
+window.showTab = (tabId)=>{
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  let tab=document.getElementById('tab-'+tabId);
+  if(tab) tab.classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  let btn=document.getElementById('btn-'+tabId);
+  if(btn) btn.classList.add('active');
+}
+
+// Settings
+function initManagerListeners(){
+  // Settings
+  onSnapshot(doc(db,"settings","global"), (snap)=>{
+    if(snap.exists()){
+      settings={...settings, ...snap.data()};
+    }
+    updateSettingsUI();
+  });
+
+  // Drivers
+  onSnapshot(collection(db,"drivers"), (snap)=>{
+    driversCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderDriversSelect();
+    renderDriversGrid();
+    renderSettingsDrivers();
+    renderDashboard();
+    renderSettlement();
+    renderAccounting();
+  });
+
+  // Orders
+  onSnapshot(query(collection(db,"orders"), orderBy("createdAt","desc")), (snap)=>{
+    ordersCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderDashboard();
+    renderOrders();
+    renderSettlement();
+    renderAccounting();
+  });
+
+  // Settlements
+  onSnapshot(query(collection(db,"settlements"), orderBy("createdAt","desc")), (snap)=>{
+    settlementsCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderDashboard();
+    renderSettlement();
+    renderAccounting();
+  });
+}
+
+function initDriverListeners(){
+  onSnapshot(doc(db,"settings","global"), (snap)=>{
+    if(snap.exists()) settings={...settings, ...snap.data()};
+  });
+  onSnapshot(query(collection(db,"orders"), where("driverId","==",currentUser.uid), orderBy("createdAt","desc")), (snap)=>{
+    ordersCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderDriverDashboard();
+  });
+  onSnapshot(query(collection(db,"settlements"), where("driverId","==",currentUser.uid), orderBy("createdAt","desc")), (snap)=>{
+    settlementsCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderDriverDashboard();
+  });
+}
+
+function updateSettingsUI(){
+  document.getElementById('set-companyName').value=settings.companyName||'';
+  document.getElementById('set-companyPhone').value=settings.companyPhone||'';
+  document.getElementById('set-companyAddress').value=settings.companyAddress||'';
+  document.getElementById('set-clientFee').value=settings.clientFeePerProduct;
+  document.getElementById('set-driverApp').value=settings.driverAppFee;
+  document.getElementById('set-managerPct').value=settings.managerFeePercent;
+  document.getElementById('set-defaultDelivery').value=settings.defaultDeliveryPrice;
+  // also update new-order defaults
+  let dp=document.getElementById('deliveryPrice');
+  if(dp && !dp.dataset.touched) dp.value=settings.defaultDeliveryPrice;
+  document.getElementById('feePerProductLabel').innerText=settings.clientFeePerProduct+' DA';
+  updateSettingsExample();
+  updateSummary();
+}
+
+window.updateSettingsExample=()=>{
+  let cf=parseFloat(document.getElementById('set-clientFee').value)||10;
+  let da=parseFloat(document.getElementById('set-driverApp').value)||10;
+  let mp=parseFloat(document.getElementById('set-managerPct').value)||40;
+  let del=parseFloat(document.getElementById('set-defaultDelivery').value)||300;
+  let qty=2;
+  let cFee=qty*cf;
+  let mFee=Math.round(del*mp/100);
+  let owes=cFee+da+mFee;
+  let keeps=del-mFee-da;
+  document.getElementById('settingsExample').innerHTML=`With ${qty} products, Delivery ${del} DA:<br>Client Fee ${qty}x${cf}=${cFee} DA, Client Total ${del+cFee} DA, Manager ${mFee} DA, Driver Owes ${owes} DA (Your Income), Driver Keeps ${keeps} DA`;
+}
+
+window.saveSettings=async()=>{
+  let newSet={
+    companyName: document.getElementById('set-companyName').value,
+    companyPhone: document.getElementById('set-companyPhone').value,
+    companyAddress: document.getElementById('set-companyAddress').value,
+    clientFeePerProduct: parseFloat(document.getElementById('set-clientFee').value)||10,
+    driverAppFee: parseFloat(document.getElementById('set-driverApp').value)||10,
+    managerFeePercent: parseFloat(document.getElementById('set-managerPct').value)||40,
+    defaultDeliveryPrice: parseFloat(document.getElementById('set-defaultDelivery').value)||300,
+    updatedAt: serverTimestamp()
+  };
+  await setDoc(doc(db,"settings","global"), newSet, {merge:true});
+  alert('✅ Settings saved! All future orders will use new values.');
+}
+
+// Drivers management
+function renderDriversSelect(){
+  let sel=document.getElementById('driverSelect');
+  if(!sel) return;
+  let activeDrivers = driversCache.filter(d=>d.active!==false);
+  sel.innerHTML = activeDrivers.map(d=>`<option value="${d.id}">${d.name} - ${d.vehicle||''} ${d.active===false?'❌':''}</option>`).join('') || '<option>No active drivers</option>';
+}
+
+function renderDriversGrid(){
+  let grid=document.getElementById('driversGrid');
+  if(!grid) return;
+  if(driversCache.length===0){ grid.innerHTML='<p style="color:#94A3B8;">No drivers yet. Add in Settings.</p>'; return; }
+  let balances=getBalances();
+  grid.innerHTML=driversCache.map(d=>`
+    <div class="card" style="margin:0;background:#0F172A;border:1px solid ${d.active===false?'#DC2626':'#334155'};">
+      <div style="display:flex;justify-content:space-between;"><div><b>${d.name}</b><br><small style="color:#94A3B8;">${d.phone||''} - ${d.vehicle||''}<br>${d.email||''}</small></div><span class="badge ${d.active===false?'badge-red':'badge-green'}">${d.active===false?'DEACTIVATED':'ACTIVE'}</span></div>
+      <div class="row"><span>Owes You</span><b style="color:#F59E0B;">${balances[d.id]?.totalOwed||0} DA</b></div>
+      <div class="row"><span>Orders</span><b>${balances[d.id]?.orderCount||0}</b></div>
+    </div>
+  `).join('');
+}
+
+function renderSettingsDrivers(){
+  let grid=document.getElementById('settingsDriversGrid');
+  if(!grid) return;
+  grid.innerHTML=driversCache.map(d=>`
+    <div class="card" style="margin:0;background:#0F172A;border:1px solid ${d.active===false?'#DC2626':'#334155'};">
+      <div style="display:flex;justify-content:space-between;"><div><b>${d.name}</b><br><small style="color:#94A3B8;">${d.email||''}<br>${d.phone||''} - ${d.vehicle||''}</small></div><span class="badge ${d.active===false?'badge-red':'badge-green'}">${d.active===false?'INACTIVE':'ACTIVE'}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+        <button class="btn btn-primary" onclick="editDriver('${d.id}')">✏️ Edit</button>
+        <button class="btn ${d.active===false?'btn-success':'btn-warning'}" onclick="toggleDriverActive('${d.id}', ${d.active===false})">${d.active===false?'✅ Activate':'⏸ Deactivate'}</button>
+        <button class="btn btn-danger" style="grid-column:span 2;" onclick="deleteDriver('${d.id}')">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('') || '<p style="color:#94A3B8;">No drivers</p>';
+}
+
+window.saveDriver=async()=>{
+  let name=document.getElementById('drv-name').value.trim();
+  let phone=document.getElementById('drv-phone').value.trim();
+  let vehicle=document.getElementById('drv-vehicle').value.trim();
+  let email=document.getElementById('drv-email').value.trim();
+  let password=document.getElementById('drv-password').value;
+  let active=document.getElementById('drv-active').value==='true';
+
+  if(!name||!email){ alert('Name & Email required'); return; }
+
+  let btn=document.getElementById('drv-saveBtn');
+  btn.innerText='Saving...'; btn.disabled=true;
+
+  try{
+    if(editingDriverId){
+      // Update existing
+      await updateDoc(doc(db,"drivers",editingDriverId), {name,phone,vehicle,email,active, updatedAt:serverTimestamp()});
+      alert('✅ Driver updated');
+      cancelEditDriver();
+    }else{
+      if(!password||password.length<6){ alert('Password min 6 chars required for new driver'); btn.innerText='Create Driver Account'; btn.disabled=false; return; }
+      // Create auth user via secondary app
+      let cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      let uid = cred.user.uid;
+      await setDoc(doc(db,"drivers",uid), {name,phone,vehicle,email,active, uid, createdAt:serverTimestamp()});
+      await signOut(secondaryAuth);
+      alert('✅ Driver created: '+name+'\nEmail: '+email+'\nHe can login now');
+      document.getElementById('drv-name').value=''; document.getElementById('drv-phone').value=''; document.getElementById('drv-vehicle').value=''; document.getElementById('drv-email').value=''; document.getElementById('drv-password').value='';
+    }
+  }catch(e){ alert('Error: '+e.message); }
+  btn.innerText= editingDriverId ? 'Update Driver' : 'Create Driver Account';
+  btn.disabled=false;
+}
+
+window.editDriver=(id)=>{
+  let d=driversCache.find(x=>x.id===id);
+  if(!d) return;
+  editingDriverId=id;
+  document.getElementById('drv-name').value=d.name||'';
+  document.getElementById('drv-phone').value=d.phone||'';
+  document.getElementById('drv-vehicle').value=d.vehicle||'';
+  document.getElementById('drv-email').value=d.email||'';
+  document.getElementById('drv-password').value='';
+  document.getElementById('drv-active').value= d.active===false ? 'false' : 'true';
+  document.getElementById('driverFormTitle').innerText='✏️ Edit Driver: '+d.name;
+  document.getElementById('drv-saveBtn').innerText='Update Driver';
+  document.getElementById('drv-cancelBtn').style.display='block';
+  document.getElementById('tab-settings').scrollIntoView();
+}
+
+window.cancelEditDriver=()=>{
+  editingDriverId=null;
+  document.getElementById('driverFormTitle').innerText='➕ Add New Driver';
+  document.getElementById('drv-saveBtn').innerText='Create Driver Account';
+  document.getElementById('drv-cancelBtn').style.display='none';
+  document.getElementById('drv-name').value=''; document.getElementById('drv-phone').value=''; document.getElementById('drv-vehicle').value=''; document.getElementById('drv-email').value=''; document.getElementById('drv-password').value='';
+}
+
+window.deleteDriver=async(id)=>{
+  if(!confirm('Delete this driver? This deletes Firestore doc (auth account remains but cannot login if doc deleted).')) return;
+  await deleteDoc(doc(db,"drivers",id));
+  alert('Deleted');
+}
+
+window.toggleDriverActive=async(id, makeActive)=>{
+  await updateDoc(doc(db,"drivers",id), {active: makeActive});
+  alert(makeActive ? '✅ Activated' : '⏸ Deactivated - Driver cannot login');
+}
+
+// Orders
+function getBalances(){
+  let bal={};
+  ordersCache.forEach(o=>{
+    let driverId=o.driverId||o.driver;
+    if(!bal[driverId]) bal[driverId]={totalOwed:0,orderCount:0,totalCollected:0,totalClientFee:0,totalManagerFee:0,totalDelivery:0};
+    bal[driverId].totalOwed+=o.yourIncome||0;
+    bal[driverId].orderCount++;
+    bal[driverId].totalCollected+=o.clientTotal||0;
+    bal[driverId].totalClientFee+=o.clientFee||0;
+    bal[driverId].totalManagerFee+=o.managerFee||0;
+    bal[driverId].totalDelivery+=o.deliveryPrice||0;
+  });
+  settlementsCache.forEach(s=>{
+    let driverId=s.driverId||s.driver;
+    // settlements may store driver name, try match
+    if(bal[driverId]) bal[driverId].totalOwed-=s.amount;
+    else{
+      // try find by name
+      let found = Object.keys(bal).find(k=> driversCache.find(d=>d.id===k && d.name===s.driver) );
+      // fallback: try match name as key
+      if(bal[s.driver]) bal[s.driver].totalOwed-=s.amount;
+    }
+  });
+  return bal;
+}
+
+window.addProduct=()=>{
+  let tbody=document.getElementById('productsBody');
+  let tr=document.createElement('tr');
+  tr.innerHTML=`<td><input class="productName" placeholder="Product"></td><td><input type="number" class="qty" value="1" min="1" oninput="updateSummary()"></td><td><button class="btn btn-danger" onclick="removeRow(this)">❌</button></td>`;
+  tbody.appendChild(tr);
+  updateSummary();
+}
+window.removeRow=(btn)=>{
+  if(document.querySelectorAll('#productsBody tr').length===1){alert('At least 1');return;}
+  btn.closest('tr').remove();
+  updateSummary();
+}
+window.updateSummary=()=>{
+  let qty=0; document.querySelectorAll('.qty').forEach(i=>qty+=parseInt(i.value)||0);
+  let delivery=parseFloat(document.getElementById('deliveryPrice').value)||settings.defaultDeliveryPrice||300;
+  let clientFee=qty * (settings.clientFeePerProduct||10);
+  let managerFee=Math.round(delivery * (settings.managerFeePercent||40)/100);
+  let driverApp=settings.driverAppFee||10;
+  let driverOwes=clientFee+driverApp+managerFee;
+  let driverKeeps=delivery-managerFee-driverApp;
+  let clientTotal=delivery+clientFee;
+  let rows=document.querySelectorAll('#productsBody tr').length;
+  document.getElementById('sum-qty').innerText=qty;
+  document.getElementById('sum-clientFee').innerText=clientFee+' DA';
+  document.getElementById('sum-delivery').innerText=delivery+' DA';
+  document.getElementById('sum-clientTotal').innerText=clientTotal+' DA';
+  document.getElementById('sum-managerFee').innerText=managerFee+' DA';
+  document.getElementById('sum-driverApp').innerText=driverApp+' DA';
+  document.getElementById('sum-driverOwes').innerText=driverOwes+' DA';
+  document.getElementById('sum-driverKeeps').innerText=driverKeeps+' DA';
+  // update fee label
+  let label=document.getElementById('feePerProductLabel');
+  if(label) label.innerText=settings.clientFeePerProduct+' DA';
+}
+
+window.saveOrder=async()=>{
+  let qty=0; document.querySelectorAll('.qty').forEach(i=>qty+=parseInt(i.value)||0);
+  if(qty===0){alert('Add product qty');return;}
+  let delivery=parseFloat(document.getElementById('deliveryPrice').value)||settings.defaultDeliveryPrice;
+  let clientFee=qty*settings.clientFeePerProduct;
+  let managerFee=Math.round(delivery*settings.managerFeePercent/100);
+  let driverApp=settings.driverAppFee;
+  let driverOwes=clientFee+driverApp+managerFee;
+  let driverKeeps=delivery-managerFee-driverApp;
+  let clientTotal=delivery+clientFee;
+  let driverSelect=document.getElementById('driverSelect');
+  let driverId=driverSelect.value;
+  let driverName=driverSelect.options[driverSelect.selectedIndex]?.text?.split(' - ')[0] || driverId;
+  if(!driverId){alert('Select driver');return;}
+
+  let orderData={
+    customer: document.getElementById('customerName').value||'Customer',
+    phone: document.getElementById('customerPhone').value||'',
+    address: document.getElementById('customerAddress')?.value||'',
+    qty: qty,
+    productLines: document.querySelectorAll('#productsBody tr').length,
+    deliveryPrice: delivery,
+    clientFee: clientFee,
+    clientTotal: clientTotal,
+    managerFee: managerFee,
+    driverAppFee: driverApp,
+    managerPercent: settings.managerFeePercent,
+    clientFeePerProduct: settings.clientFeePerProduct,
+    driverOwes: driverOwes,
+    yourIncome: driverOwes,
+    driverKeeps: driverKeeps,
+    driver: driverName,
+    driverId: driverId,
+    driverName: driverName,
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString(),
+    status: 'Delivered',
+    createdAt: serverTimestamp()
+  };
+
+  try{
+    await addDoc(collection(db,"orders"), orderData);
+    alert(`✅ Order Saved!\nDriver ${driverName} now owes ${driverOwes} DA\nClient Total: ${clientTotal} DA\nDriver Keeps: ${driverKeeps} DA`);
+    showTab('settlement');
+  }catch(e){ alert('Error saving order: '+e.message); }
+}
+
+function renderDashboard(){
+  let balances=getBalances();
+  let totalToCollect=0,totalIncome=0,totalClientFees=0,totalDriverKept=0;
+  ordersCache.forEach(o=>{ totalClientFees+=o.clientFee||0; totalIncome+=o.yourIncome||0; totalDriverKept+=o.driverKeeps||0; });
+  Object.values(balances).forEach(b=>{ totalToCollect+=b.totalOwed; });
+
+  let el;
+  el=document.getElementById('dash-totalOrders'); if(el) el.innerText=ordersCache.length;
+  el=document.getElementById('dash-toCollect'); if(el) el.innerText=totalToCollect+' DA';
+  el=document.getElementById('dash-yourIncome'); if(el) el.innerText=totalIncome+' DA';
+  el=document.getElementById('dash-clientFees'); if(el) el.innerText=totalClientFees+' DA';
+  el=document.getElementById('dash-driverKept'); if(el) el.innerText=totalDriverKept+' DA';
+  el=document.getElementById('dash-activeDrivers'); if(el) el.innerText=driversCache.filter(d=>d.active!==false).length;
+
+  let list=document.getElementById('dash-driversList');
+  if(list){
+    let html='';
+    Object.entries(balances).forEach(([driverId,b])=>{
+      let driverName = driversCache.find(d=>d.id===driverId)?.name || driverId;
+      html+=`<div class="row"><span>🚗 ${driverName} (${b.orderCount} orders)</span><b style="color:${b.totalOwed>0?'#F59E0B':'#22C55E'}">${b.totalOwed} DA to collect</b></div>`;
+    });
+    if(html==='') html='<p style="color:#94A3B8;">No orders yet</p>';
+    list.innerHTML=html;
+  }
+
+  let tbody=document.getElementById('dash-ordersBody');
+  if(tbody){
+    tbody.innerHTML=ordersCache.slice(0,10).map(o=>`<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${o.qty||0}</td><td>${o.deliveryPrice||0} DA</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td></tr>`).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No orders</td></tr>';
+  }
+}
+
+function renderOrders(){
+  let filter=document.getElementById('ordersSearch')?.value.toUpperCase()||'';
+  let tbody=document.getElementById('ordersBody');
+  if(!tbody) return;
+  let filtered=ordersCache.filter(o=> (o.customer+' '+(o.driverName||o.driver||'')).toUpperCase().includes(filter));
+  tbody.innerHTML=filtered.map(o=>`<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${o.qty||0}</td><td>${o.deliveryPrice||0} DA</td><td>${o.clientFee||0} DA</td><td style="color:#F59E0B;"><b>${o.yourIncome||0} DA</b></td><td style="color:#22C55E;">${o.driverKeeps||0} DA</td><td>${o.date||''}</td><td><button class="btn btn-danger" onclick="deleteOrder('${o.id}')">🗑</button></td></tr>`).join('') || '<tr><td colspan="10" style="color:#94A3B8;">No orders</td></tr>';
+}
+
+window.deleteOrder=async(id)=>{
+  if(!confirm('Delete order?')) return;
+  await deleteDoc(doc(db,"orders",id));
+}
+
+function renderSettlement(){
+  let balances={};
+  ordersCache.forEach(o=>{
+    let driverId=o.driverId||o.driver;
+    let driverName=o.driverName||o.driver||driverId;
+    if(!balances[driverId]) balances[driverId]={id:driverId,name:driverName,totalOwed:0,totalCollected:0,orderCount:0,totalClientFee:0,totalManagerFee:0,totalDelivery:0};
+    balances[driverId].totalOwed+=o.yourIncome||0;
+    balances[driverId].totalCollected+=o.clientTotal||0;
+    balances[driverId].orderCount++;
+    balances[driverId].totalClientFee+=o.clientFee||0;
+    balances[driverId].totalManagerFee+=o.managerFee||0;
+    balances[driverId].totalDelivery+=o.deliveryPrice||0;
+  });
+  settlementsCache.forEach(s=>{
+    let driverId=s.driverId||s.driver;
+    // try match by id or name
+    if(balances[driverId]) balances[driverId].totalOwed-=s.amount;
+    else{
+      // find by name
+      let foundKey=Object.keys(balances).find(k=>balances[k].name===s.driverName||balances[k].name===s.driver);
+      if(foundKey) balances[foundKey].totalOwed-=s.amount;
+    }
+  });
+
+  let totalToCollect=0,totalOrders=0;
+  Object.values(balances).forEach(b=>{totalToCollect+=b.totalOwed; totalOrders+=b.orderCount;});
+
+  let el;
+  el=document.getElementById('set-toCollect'); if(el) el.innerText=totalToCollect+' DA';
+  el=document.getElementById('set-orders'); if(el) el.innerText=totalOrders;
+  el=document.getElementById('set-drivers'); if(el) el.innerText=Object.keys(balances).length;
+  el=document.getElementById('set-collected'); if(el) el.innerText=settlementsCache.reduce((a,b)=>a+b.amount,0)+' DA';
+
+  let grid=document.getElementById('settlementGrid');
+  if(grid){
+    grid.innerHTML=Object.values(balances).map(b=>`
+      <div class="card" style="margin:0;background:#0F172A;border:1px solid ${b.totalOwed>0?'#F59E0B':'#22C55E'};">
+        <div style="display:flex;justify-content:space-between;"><div><b>${b.name}</b><br><small style="color:#94A3B8;">${b.orderCount} orders</small></div><b style="font-size:20px;color:${b.totalOwed>0?'#F59E0B':'#22C55E'};">${b.totalOwed} DA</b></div>
+        <div class="row"><span>Collected from clients</span><b>${b.totalCollected} DA</b></div>
+        <div class="row"><span>Client Fees</span><b>${b.totalClientFee} DA</b></div>
+        <div class="row"><span>Manager 40%</span><b>${b.totalManagerFee} DA</b></div>
+        <div class="row"><span>Driver Kept</span><b style="color:#22C55E;">${b.totalDelivery - b.totalManagerFee - b.orderCount*(settings.driverAppFee||10)} DA</b></div>
+        <button class="btn" style="background:#16A34A;width:100%;margin-top:10px;" onclick="settleDriver('${b.id}','${b.name}',${b.totalOwed})" ${b.totalOwed<=0?'disabled style=opacity:.3':''}>💰 Settle & Reset to 0 - Take ${b.totalOwed} DA</button>
+      </div>
+    `).join('') || '<p style="color:#94A3B8;">No orders yet</p>';
+  }
+
+  let hist=document.getElementById('settlementHistory');
+  if(hist){
+    hist.innerHTML=settlementsCache.length===0 ? '<p style="color:#64748B;">No settlements yet</p>' : settlementsCache.slice(0,20).map(s=>`<div class="row"><span>✅ ${s.driverName||s.driver} settled ${s.amount} DA</span><small>${s.date||''} ${s.time||''}</small></div>`).join('');
+  }
+}
+
+window.settleDriver=async(driverId, driverName, amount)=>{
+  if(amount<=0){alert('Nothing to collect');return;}
+  if(!confirm(`Take ${amount} DA from ${driverName} and reset balance to 0?`)) return;
+  await addDoc(collection(db,"settlements"), {driverId, driverName, driver: driverName, amount, date: new Date().toISOString().slice(0,10), time: new Date().toLocaleTimeString(), createdAt: serverTimestamp()});
+  alert(`✅ Collected ${amount} DA from ${driverName}. Balance reset to 0.`);
+}
+
+function renderAccounting(){
+  let dateFilter=document.getElementById('acc-date')?.value||'';
+  let search=document.getElementById('acc-search')?.value.toUpperCase()||'';
+  let filtered=ordersCache.filter(o=>{
+    if(dateFilter && o.date!==dateFilter) return false;
+    if(search && !(o.customer+' '+(o.driverName||o.driver||'')).toUpperCase().includes(search)) return false;
+    return true;
+  });
+  let tbody=document.getElementById('acc-body');
+  if(!tbody) return;
+  tbody.innerHTML=filtered.map(o=>`<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${o.qty||0}</td><td>${o.deliveryPrice||0} DA</td><td>${o.clientFee||0} DA</td><td>${o.managerFee||0} DA</td><td style="color:#F59E0B;"><b>${o.yourIncome||0} DA</b></td><td style="color:#22C55E;">${o.driverKeeps||0} DA</td><td>${o.date||''}</td></tr>`).join('') || '<tr><td colspan="10" style="color:#94A3B8;">No data</td></tr>';
+
+  let totalOrders=filtered.length,clientFees=0,managerFees=0,yourIncome=0;
+  filtered.forEach(o=>{clientFees+=o.clientFee||0; managerFees+=o.managerFee||0; yourIncome+=o.yourIncome||0;});
+  let balances={};
+  filtered.forEach(o=>{ let id=o.driverId||o.driver; if(!balances[id]) balances[id]=0; balances[id]+=o.yourIncome||0; });
+  settlementsCache.forEach(s=>{ let id=s.driverId||s.driver; if(balances[id]!=undefined) balances[id]-=s.amount; else if(balances[s.driverName]!=undefined) balances[s.driverName]-=s.amount; });
+  let toCollect=Object.values(balances).reduce((a,b)=>a+b,0);
+
+  let el;
+  el=document.getElementById('acc-totalOrders'); if(el) el.innerText=totalOrders;
+  el=document.getElementById('acc-clientFees'); if(el) el.innerText=clientFees+' DA';
+  el=document.getElementById('acc-managerFees'); if(el) el.innerText=managerFees+' DA';
+  el=document.getElementById('acc-yourIncome'); if(el) el.innerText=yourIncome+' DA';
+  el=document.getElementById('acc-toCollect'); if(el) el.innerText=toCollect+' DA';
+}
+
+window.renderOrders=renderOrders;
+window.renderAccounting=renderAccounting;
+
+function renderDriverDashboard(){
+  let driverOrders=ordersCache;
+  let driverSettlements=settlementsCache;
+  let totalOwed=driverOrders.reduce((a,b)=>a+(b.yourIncome||0),0) - driverSettlements.reduce((a,b)=>a+b.amount,0);
+  let totalKept=driverOrders.reduce((a,b)=>a+(b.driverKeeps||0),0);
+  let totalCollected=driverOrders.reduce((a,b)=>a+(b.clientTotal||0),0);
+  let totalClientFee=driverOrders.reduce((a,b)=>a+(b.clientFee||0),0);
+  let totalManager=driverOrders.reduce((a,b)=>a+(b.managerFee||0),0);
+
+  let el;
+  el=document.getElementById('driver-owe'); if(el) el.innerText=totalOwed+' DA';
+  el=document.getElementById('driver-completed'); if(el) el.innerText=driverOrders.length;
+  el=document.getElementById('driver-kept'); if(el) el.innerText=totalKept+' DA';
+  el=document.getElementById('driver-totalCollected'); if(el) el.innerText=totalCollected+' DA';
+  let breakdown=document.getElementById('driver-breakdown');
+  if(breakdown) breakdown.innerHTML=`<div class="row"><span>Client Fees Collected</span><b>${totalClientFee} DA</b></div><div class="row"><span>Manager Fees 40%</span><b>${totalManager} DA</b></div><div class="row"><span>App Fees</span><b>${driverOrders.length* (settings.driverAppFee||10)} DA</b></div>`;
+
+  let tbody=document.getElementById('driver-ordersBody');
+  if(tbody) tbody.innerHTML=driverOrders.map(o=>`<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.qty||0}</td><td>${o.deliveryPrice||0} DA</td><td>${o.clientTotal||0} DA</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td style="color:#22C55E;">${o.driverKeeps||0} DA</td><td>${o.date||''}</td></tr>`).join('') || '<tr><td colspan="8" style="color:#94A3B8;">No orders</td></tr>';
+}
+
+// Expose for global
+window.updateSettingsExample=updateSettingsExample;
+window.updateSummary=updateSummary;
+</script>
+</body>
+</html>
