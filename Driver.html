@@ -1,1 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Driver - LIVRILY</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+        body{background:#0F172A;color:white;min-height:100vh}
+        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
+        .logo{color:#38BDF8;font-weight:bold}
+        nav{display:flex;gap:6px;background:#1E293B;padding:10px;position:sticky;top:50px;z-index:999}
+        nav button{color:#CBD5E1;background:#0F172A;border:none;padding:8px 12px;border-radius:10px;font-size:12px;cursor:pointer}
+        nav button.active,nav button:hover{background:#2563EB;color:white}
+        .container{max-width:800px;margin:auto;padding:14px}
+        .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px}
+        .card h2{color:#38BDF8;margin-bottom:10px;font-size:15px}
+        .btn{padding:9px 14px;border:none;border-radius:9px;color:white;font-weight:bold;cursor:pointer;font-size:12px}
+        .btn-primary{background:#2563EB}.btn-success{background:#16A34A}.btn-danger{background:#DC2626}
+        .row{display:flex;justify-content:space-between;padding:8px;background:#0F172A;border-radius:8px;margin-top:6px;font-size:12px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#2563EB;padding:8px;color:white;font-size:11px}
+        td{padding:8px;border-bottom:1px solid #334155;text-align:center;font-size:11px}
+        .tab{display:none}.tab.active{display:block}
+        #map{height:300px;border-radius:12px;margin-top:10px}
+        .summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+        .summaryCard{background:#0F172A;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🚚 LIVRILY <span style="background:#38BDF8;color:#0F172A;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;">DRIVER</span></div>
+        <div><span id="userEmail" style="font-size:11px;color:#94A3B8;"></span> <button class="btn btn-danger" type="button" onclick="logout()">Logout</button></div>
+    </header>
+    <nav>
+        <button type="button" onclick="showTab('dashboard')" id="btn-dashboard" class="active">🛵 My Dashboard</button>
+        <button type="button" onclick="showTab('orders')" id="btn-orders">📋 My Orders</button>
+        <button type="button" onclick="showTab('map')" id="btn-map">🗺️ Map</button>
+    </nav>
+    <div class="container">
+        <div id="tab-dashboard" class="tab active">
+            <div class="card">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:50px;height:50px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;" id="avatar">A</div>
+                    <div>
+                        <h3 id="driverName">Driver</h3>
+                        <p style="color:#94A3B8;font-size:11px;" id="driverEmail"></p>
+                        <span id="status" style="background:#16A34A;padding:4px 10px;border-radius:12px;font-size:11px;">🟢 Available</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="button" style="width:100%;margin-top:10px;" onclick="toggleStatus()">Change Availability</button>
+            </div>
+            <div class="card">
+                <h2>💰 Your Balance - Owe to Manager</h2>
+                <h1 id="owe" style="text-align:center;color:#F59E0B;font-size:32px;">0 DA</h1>
+                <p style="text-align:center;color:#94A3B8;font-size:11px;">You collected from clients, you owe this. Manager takes it and resets to 0 when you go back.</p>
+                <div id="breakdown"></div>
+            </div>
+            <div class="card">
+                <h2>📊 Today's Stats</h2>
+                <div class="summaryGrid">
+                    <div class="summaryCard"><b id="completed">0</b><br><small>Orders</small></div>
+                    <div class="summaryCard"><b id="kept" style="color:#22C55E;">0 DA</b><br><small>You Kept</small></div>
+                    <div class="summaryCard"><b id="collected">0 DA</b><br><small>Collected</small></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>📍 Share Location</h2>
+                <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn btn-success" type="button" onclick="startTracking()">📍 Start GPS</button><button class="btn btn-danger" type="button" onclick="stopTracking()">⏹ Stop</button></div>
+                <p id="gpsStatus" style="font-size:11px;color:#94A3B8;margin-top:8px;">GPS not started</p>
+            </div>
+        </div>
+        <div id="tab-orders" class="tab">
+            <div class="card">
+                <h2>📋 My Orders - With Products Pickup & Customer Map</h2>
+                <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products Pickup</th><th>Qty</th><th>Address + Map</th><th>Client Total</th><th>You Owe</th><th>You Keep</th><th>Nav</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+            </div>
+        </div>
+        <div id="tab-map" class="tab">
+            <div class="card"><h2>🗺️ My Location + Customers</h2><div id="map"></div><div style="margin-top:10px;"><button class="btn btn-primary" type="button" onclick="centerMap()">📍 Center on Me</button></div></div>
+        </div>
+    </div>
+    <script type="module">
+        import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+            authDomain: "livrily-a6e7e.firebaseapp.com",
+            projectId: "livrily-a6e7e",
+            storageBucket: "livrily-a6e7e.firebasestorage.app",
+            messagingSenderId: "904979289112",
+            appId: "1:904979289112:web:9981377a9500b940091f6d"
+        };
+        let app;
+        try{ if(getApps().length===0) app=initializeApp(firebaseConfig); else app=getApp(); }catch(e){ app=initializeApp(firebaseConfig); }
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+        const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
+        function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
+
+        let currentUser=null;
+        let ordersCache=[];
+        let settlementsCache=[];
+        let map, marker, watchId=null;
+        let currentLocation=null;
+        let customerMarkers={};
+        let lastLocationSave=0;
+
+        window.onerror=function(msg){ console.error("JS Error:", msg); };
+
+        onAuthStateChanged(auth, async (user)=>{
+            try{
+                if(!user){ location.href='Login.html'; return; }
+                if(isManager(user)){ location.href='Manager.html'; return; }
+                let snap=await getDoc(doc(db,"drivers",user.uid));
+                if(snap.exists() && snap.data().active===false){
+                    alert('Account deactivated');
+                    await signOut(auth);
+                    location.href='Login.html';
+                    return;
+                }
+                currentUser=user;
+                document.getElementById('userEmail').innerText=user.email;
+                document.getElementById('driverEmail').innerText=user.email;
+                let name=snap.exists()? snap.data().name : user.email.split('@')[0];
+                document.getElementById('driverName').innerText=name;
+                document.getElementById('avatar').innerText=name[0].toUpperCase();
+                initMap();
+                initListeners();
+            }catch(e){ console.error(e); }
+        });
+
+        window.logout=async()=>{ try{ await signOut(auth); }catch(e){} location.href='Login.html'; }
+
+        window.showTab=(id)=>{
+            try{
+                document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+                document.getElementById('tab-'+id).classList.add('active');
+                document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+                document.getElementById('btn-'+id).classList.add('active');
+                if(id==='map' && map) setTimeout(()=>{ try{ map.invalidateSize(); }catch(e){} },200);
+            }catch(e){ console.error(e); }
+        }
+
+        function initMap(){
+            try{
+                map=L.map('map').setView([35.6911, 0.6417], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}).addTo(map);
+            }catch(e){ console.error(e); }
+        }
+
+        window.centerMap=()=>{
+            try{
+                if(currentLocation && map) map.setView([currentLocation.lat, currentLocation.lng], 15);
+            }catch(e){}
+        }
+
+        function initListeners(){
+            try{
+                onSnapshot(query(collection(db,"orders"), orderBy("createdAt","desc")), (snap)=>{
+                    try{
+                        let all=snap.docs.map(d=>({id:d.id, ...d.data()}));
+                        let myName=document.getElementById('driverName')?.innerText?.toLowerCase() || '';
+                        let myEmail=currentUser.email.toLowerCase();
+                        let myUid=currentUser.uid;
+                        let emailPrefix=myEmail.split('@')[0].toLowerCase();
+
+                        ordersCache=all.filter(o=>{
+                            if(o.driverId===myUid) return true;
+                            if(o.driverEmail && o.driverEmail.toLowerCase()===myEmail) return true;
+                            if(o.driverName && o.driverName.toLowerCase()===myName) return true;
+                            if(o.driver && o.driver.toLowerCase()===myName) return true;
+                            if(o.driver && o.driver.toLowerCase().includes(myName)) return true;
+                            if(o.driverName && o.driverName.toLowerCase().includes(emailPrefix)) return true;
+                            if(o.driver && o.driver.toLowerCase().includes(emailPrefix)) return true;
+                            return false;
+                        });
+
+                        renderDashboard();
+                        renderOrders();
+                        updateMapCustomers();
+                    }catch(e){ console.error(e); }
+                });
+
+                onSnapshot(query(collection(db,"settlements"), orderBy("createdAt","desc")), (snap)=>{
+                    try{
+                        let all=snap.docs.map(d=>({id:d.id, ...d.data()}));
+                        let myName=document.getElementById('driverName')?.innerText || '';
+                        settlementsCache=all.filter(s=> 
+                            s.driverId===currentUser.uid || 
+                            s.driverEmail===currentUser.email ||
+                            s.driverName===myName || 
+                            s.driver===myName
+                        );
+                        renderDashboard();
+                    }catch(e){ console.error(e); }
+                });
+            }catch(e){ console.error(e); }
+        }
+
+        function renderDashboard(){
+            try{
+                let totalOwed=ordersCache.reduce((a,b)=>a+(b.yourIncome||0),0) - settlementsCache.reduce((a,b)=>a+b.amount,0);
+                let totalKept=ordersCache.reduce((a,b)=>a+(b.driverKeeps||0),0);
+                let totalCollected=ordersCache.reduce((a,b)=>a+(b.clientTotal||0),0);
+                let totalClientFee=ordersCache.reduce((a,b)=>a+(b.clientFee||0),0);
+                let totalManager=ordersCache.reduce((a,b)=>a+(b.managerFee||0),0);
+
+                let el;
+                el=document.getElementById('owe'); if(el) el.innerText=totalOwed+' DA';
+                el=document.getElementById('completed'); if(el) el.innerText=ordersCache.length;
+                el=document.getElementById('kept'); if(el) el.innerText=totalKept+' DA';
+                el=document.getElementById('collected'); if(el) el.innerText=totalCollected+' DA';
+                el=document.getElementById('breakdown'); if(el) el.innerHTML=`<div class="row"><span>Client Fees</span><b>${totalClientFee} DA</b></div><div class="row"><span>Manager 40%</span><b>${totalManager} DA</b></div><div class="row"><span>App Fees</span><b>${ordersCache.length*10} DA</b></div>`;
+            }catch(e){ console.error(e); }
+        }
+
+        function renderOrders(){
+            try{
+                let tbody=document.getElementById('ordersBody');
+                if(!tbody) return;
+                tbody.innerHTML=ordersCache.map(o=>{
+                    let prodText=(o.products||[]).map(p=>`${p.name} x${p.qty}`).join(', ') || `${o.qty||0} products`;
+                    let hasCoords = o.customerLat && o.customerLng;
+                    return `<tr>
+                        <td>${o.id?.slice(0,5)||''}</td>
+                        <td>${o.customer||''}<br><small style="color:#94A3B8;">${o.phone||''}</small></td>
+                        <td style="max-width:120px;white-space:pre-wrap;"><b>${prodText}</b></td>
+                        <td>${o.qty||0}</td>
+                        <td style="max-width:120px;white-space:pre-wrap;">${o.address||''}<br>${hasCoords?`<small style="color:#22C55E;">📍 Located</small>`:''}<br><small>${o.shop||''}</small></td>
+                        <td>${o.clientTotal||0} DA</td>
+                        <td style="color:#F59E0B;"><b>${o.yourIncome||0} DA</b></td>
+                        <td style="color:#22C55E;">${o.driverKeeps||0} DA</td>
+                        <td><button class="btn btn-primary" type="button" onclick="navigateTo('${o.id}')">🧭</button><br><small>${o.status||''}</small></td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="9" style="color:#94A3B8;">No orders yet. Manager must assign order to your name/email.</td></tr>';
+            }catch(e){ console.error(e); }
+        }
+
+        window.navigateTo=(orderId)=>{
+            try{
+                let o=ordersCache.find(x=>x.id===orderId);
+                if(!o) return;
+                if(o.customerLat && o.customerLng){
+                    window.open(`https://www.openstreetmap.org/?mlat=${o.customerLat}&mlon=${o.customerLng}#map=16/${o.customerLat}/${o.customerLng}`, '_blank');
+                }else if(o.address){
+                    window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(o.address)}`, '_blank');
+                }
+            }catch(e){ console.error(e); }
+        }
+
+        window.toggleStatus=()=>{
+            try{
+                let el=document.getElementById('status');
+                if(el.innerText.includes('Available')){ el.innerText='⚫ Offline'; el.style.background='#64748B'; }
+                else{ el.innerText='🟢 Available'; el.style.background='#16A34A'; }
+            }catch(e){}
+        }
+
+        function updateMapCustomers(){
+            try{
+                if(!map) return;
+                Object.values(customerMarkers).forEach(m=>{ try{ map.removeLayer(m); }catch(e){} });
+                customerMarkers={};
+                ordersCache.forEach(o=>{
+                    if(o.customerLat && o.customerLng){
+                        try{
+                            let m=L.marker([o.customerLat, o.customerLng]).addTo(map).bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}<br>📍 ${o.address||''}`);
+                            customerMarkers[o.id]=m;
+                        }catch(e){}
+                    }
+                });
+            }catch(e){ console.error(e); }
+        }
+
+        window.startTracking=()=>{
+            try{
+                if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
+                document.getElementById('gpsStatus').innerText='📍 Tracking...';
+                watchId=navigator.geolocation.watchPosition(async pos=>{
+                    try{
+                        let now=Date.now();
+                        if(now - lastLocationSave < 10000) return; // throttle 10 sec
+                        lastLocationSave=now;
+                        let lat=pos.coords.latitude, lng=pos.coords.longitude;
+                        currentLocation={lat,lng};
+                        if(map){
+                            if(!marker){ marker=L.marker([lat,lng]).addTo(map).bindPopup('You are here'); }
+                            else{ try{ marker.setLatLng([lat,lng]); }catch(e){} }
+                        }
+                        await setDoc(doc(db,"locations",currentUser.uid), {lat,lng, updatedAt: serverTimestamp(), driverId: currentUser.uid, driverName: document.getElementById('driverName').innerText}, {merge:true});
+                        document.getElementById('gpsStatus').innerText=`✅ Shared: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                    }catch(e){ console.error(e); document.getElementById('gpsStatus').innerText='Error: '+e.message; }
+                }, (err)=>{ document.getElementById('gpsStatus').innerText='GPS error: '+err.message; }, {enableHighAccuracy:true, maximumAge:5000, timeout:10000});
+            }catch(e){ console.error(e); }
+        }
+
+        window.stopTracking=()=>{
+            try{
+                if(watchId) navigator.geolocation.clearWatch(watchId);
+                watchId=null;
+                document.getElementById('gpsStatus').innerText='⏹ GPS stopped';
+            }catch(e){}
+        }
+    </script>
+</body>
+</html>
