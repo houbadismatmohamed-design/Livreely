@@ -57,7 +57,7 @@
         <button data-tab="orders">📋 Orders</button>
     </nav>
     <div class="container">
-        <!-- Dashboard Tab -->
+        <!-- Dashboard -->
         <div id="tab-dashboard" class="tab active">
             <div class="card">
                 <h2>📈 Your Shop Stats</h2>
@@ -70,7 +70,7 @@
             <div class="card"><h2>📋 Recent Orders</h2><div id="recentOrders"></div></div>
         </div>
 
-        <!-- Products Tab -->
+        <!-- Products -->
         <div id="tab-products" class="tab">
             <div class="card">
                 <h2>➕ Add Product</h2>
@@ -88,7 +88,7 @@
             </div>
         </div>
 
-        <!-- Orders Tab -->
+        <!-- Orders -->
         <div id="tab-orders" class="tab">
             <div class="card">
                 <h2>📋 Incoming Orders</h2>
@@ -98,13 +98,9 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
     <script type="module">
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  IMPORTS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, where, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -123,24 +119,15 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  STATE
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        let currentUser = null;
-        let shopId = null;
-        let products = [];
-        let shopOrders = [];
+        let currentUser = null, shopId = null;
+        let products = [], shopOrders = [];
 
-        // DOM refs
         const userEmailSpan = document.getElementById('userEmail');
         const productsBody = document.getElementById('productsBody');
         const ordersBody = document.getElementById('ordersBody');
         const toast = document.getElementById('toast');
         const debugInfo = document.getElementById('debugInfo');
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TOAST
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let toastTimer;
         function showToast(msg) {
             toast.textContent = msg;
@@ -149,9 +136,7 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOGIN OVERLAY
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ─── LOGIN OVERLAY ───
         const loginOverlay = document.createElement('div');
         loginOverlay.id = 'loginOverlay';
         loginOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;';
@@ -225,9 +210,6 @@
             console.log('Shop profile ensured for UID:', shopId);
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  AUTH STATE
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 loginOverlay.style.display = 'none';
@@ -236,7 +218,6 @@
                 shopId = user.uid;
                 await ensureShopProfile(user);
                 initListeners();
-                console.log('Shop owner logged in, shopId =', shopId);
                 debugInfo.textContent = '🔍 Your shop ID: ' + shopId;
             } else {
                 loginOverlay.style.display = 'flex';
@@ -249,27 +230,21 @@
             showToast('Logged out');
         });
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LISTENERS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ─── LISTENERS ───
         function initListeners() {
-            // Products
             const qProducts = query(collection(db, "products"), where("shopId", "==", shopId));
             onSnapshot(qProducts, (snap) => {
                 products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderProducts();
                 updateStats();
-                console.log('Products loaded for shop:', products);
             });
 
-            // Orders
             const qOrders = query(collection(db, "shopOrders"), where("shopId", "==", shopId));
             onSnapshot(qOrders, (snap) => {
                 shopOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderOrders();
                 updateStats();
                 renderRecentOrders();
-                console.log('Orders loaded for shop:', shopOrders);
                 if (shopOrders.length === 0) {
                     debugInfo.innerHTML += '<br>No orders found for this shop. Check that orders have the correct shopId.';
                 } else {
@@ -344,7 +319,6 @@
             } catch (e) { showToast('❌ ' + e.message); }
         });
 
-        // ─── ORDERS ───
         function renderOrders() {
             ordersBody.innerHTML = shopOrders.map(o => `
                 <tr>
@@ -368,7 +342,6 @@
                 const order = shopOrders.find(o => o.id === orderId);
                 if (!order) return;
                 await updateDoc(doc(db, "shopOrders", orderId), { status: 'accepted' });
-                // Reduce product quantities
                 for (const item of order.items) {
                     const productRef = doc(db, "products", item.productId);
                     const snap = await getDoc(productRef);
@@ -377,7 +350,6 @@
                         await updateDoc(productRef, { qty: Math.max(newQty, 0) });
                     }
                 }
-                // Copy to orders collection for manager/driver
                 const orderData = {
                     customer: order.clientName,
                     phone: order.phone,
@@ -417,9 +389,6 @@
             `).join('') || '<p style="color:#94A3B8;">No orders yet</p>';
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TABS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         document.querySelectorAll('nav button').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
