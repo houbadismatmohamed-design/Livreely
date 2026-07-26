@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LIVRILY · Shop</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif}
+        body{background:#0F172A;color:#F8FAFC;min-height:100vh}
+        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155}
+        .logo{color:#38BDF8;font-weight:700;font-size:20px}
+        .logo small{font-size:11px;background:#38BDF8;color:#0F172A;padding:2px 10px;border-radius:20px;margin-left:8px}
+        .container{max-width:1200px;margin:0 auto;padding:14px}
+        .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px;border:1px solid #334155}
+        .card h2{color:#38BDF8;font-size:15px;margin-bottom:10px}
+        .btn{padding:8px 16px;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;transition:.1s}
+        .btn:active{transform:scale(.96)}
+        .btn-primary{background:#2563EB;color:#fff}.btn-primary:hover{background:#1D4ED8}
+        .btn-success{background:#16A34A;color:#fff}.btn-success:hover{background:#15803D}
+        .btn-danger{background:#DC2626;color:#fff}.btn-danger:hover{background:#B91C1C}
+        .btn-warning{background:#F59E0B;color:#0F172A}.btn-warning:hover{background:#D97706}
+        .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+        .product-card{background:#0F172A;border-radius:12px;padding:12px;border:1px solid #334155;text-align:center}
+        .product-card .price{color:#F59E0B;font-size:18px;font-weight:700}
+        .product-card .qty{color:#94A3B8;font-size:11px}
+        input,select,textarea{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:10px;background:#0F172A;color:#F8FAFC;font-size:13px;margin-top:6px;outline:none}
+        input:focus{ border-color:#3B82F6 }
+        label{display:block;margin-top:10px;font-size:12px;color:#CBD5E1}
+        .cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2D3748;font-size:13px}
+        .total-row{display:flex;justify-content:space-between;padding:10px 0;font-weight:700;font-size:16px}
+        .badge{background:#2563EB;padding:2px 10px;border-radius:20px;font-size:11px;color:#fff}
+        .hidden{display:none}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #38BDF8;padding:12px 24px;border-radius:12px;color:#F8FAFC;font-weight:600;z-index:9999;display:none}
+        .toast.show{display:block}
+        @media(max-width:600px){.product-grid{grid-template-columns:repeat(2,1fr)}}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🛒 LIVRILY <small>Shop</small></div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <span id="cartCount" class="badge">0</span>
+            <button class="btn btn-primary" id="viewCartBtn">🛍️ Cart</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Product List -->
+        <div id="productList" class="card">
+            <h2>📦 Products</h2>
+            <div id="productsGrid" class="product-grid"></div>
+        </div>
+
+        <!-- Cart Modal (simple inline) -->
+        <div id="cartSection" class="card hidden">
+            <h2>🛒 Your Cart</h2>
+            <div id="cartItems"></div>
+            <div class="total-row"><span>Total</span><span id="cartTotal">0 DA</span></div>
+            <button class="btn btn-success" id="checkoutBtn" style="width:100%;margin-top:10px;">Proceed to Checkout</button>
+            <button class="btn btn-outline" id="closeCartBtn" style="width:100%;margin-top:6px;">Close Cart</button>
+        </div>
+
+        <!-- Checkout Form -->
+        <div id="checkoutForm" class="card hidden">
+            <h2>📋 Delivery Details</h2>
+            <label>Full Name</label><input id="clientName" placeholder="Your name" />
+            <label>Phone</label><input id="clientPhone" placeholder="0550XXXXXX" />
+            <label>Address</label><textarea id="clientAddress" placeholder="Delivery address"></textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+                <button class="btn btn-success" id="placeOrderBtn">✅ Place Order</button>
+                <button class="btn btn-danger" id="cancelCheckoutBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script type="module">
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  FIREBASE IMPORTS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, deleteDoc, updateDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        const config = {
+            apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+            authDomain: "livrily-a6e7e.firebaseapp.com",
+            projectId: "livrily-a6e7e",
+            storageBucket: "livrily-a6e7e.firebasestorage.app",
+            messagingSenderId: "904979289112",
+            appId: "1:904979289112:web:9981377a9500b940091f6d"
+        };
+
+        let app;
+        try { app = getApps().length ? getApp() : initializeApp(config); } catch (_) { app = initializeApp(config); }
+        const db = getFirestore(app);
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  STATE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let products = [];
+        let cart = []; // array of { productId, name, price, qty }
+
+        // DOM refs
+        const productsGrid = document.getElementById('productsGrid');
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const cartCount = document.getElementById('cartCount');
+        const cartSection = document.getElementById('cartSection');
+        const checkoutForm = document.getElementById('checkoutForm');
+        const toast = document.getElementById('toast');
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TOAST
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let toastTimer;
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  LOAD PRODUCTS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        onSnapshot(collection(db, "products"), (snap) => {
+            products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderProducts();
+        });
+
+        function renderProducts() {
+            productsGrid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <div style="font-weight:600;font-size:16px;">${p.name}</div>
+                    <div class="price">${p.price || 0} DA</div>
+                    <div class="qty">In stock: ${p.qty || 0}</div>
+                    <button class="btn btn-primary" style="margin-top:8px;width:100%;" onclick="addToCart('${p.id}','${p.name}',${p.price},${p.qty||0})">➕ Add</button>
+                </div>
+            `).join('');
+        }
+
+        // Expose addToCart globally for onclick
+        window.addToCart = function(id, name, price, stock) {
+            if (stock <= 0) { showToast('❌ Out of stock'); return; }
+            const existing = cart.find(item => item.productId === id);
+            if (existing) {
+                if (existing.qty >= stock) { showToast('❌ Not enough stock'); return; }
+                existing.qty++;
+            } else {
+                cart.push({ productId: id, name, price, qty: 1 });
+            }
+            updateCartUI();
+            showToast(`✅ ${name} added`);
+        };
+
+        function updateCartUI() {
+            const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+            const count = cart.reduce((sum, i) => sum + i.qty, 0);
+            cartCount.textContent = count;
+            cartTotal.textContent = total + ' DA';
+            // Render cart items
+            cartItems.innerHTML = cart.map((item, idx) => `
+                <div class="cart-item">
+                    <span>${item.name} x${item.qty}</span>
+                    <span>${item.price * item.qty} DA 
+                        <button class="btn btn-danger" style="padding:2px 8px;font-size:10px;" onclick="removeFromCart(${idx})">❌</button>
+                    </span>
+                </div>
+            `).join('');
+            // Show/hide cart section? We keep it always visible but initially hidden; we'll toggle.
+        }
+
+        window.removeFromCart = function(idx) {
+            cart.splice(idx, 1);
+            updateCartUI();
+            showToast('🗑️ Removed from cart');
+        };
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  CART UI TOGGLES
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        document.getElementById('viewCartBtn').addEventListener('click', () => {
+            cartSection.classList.toggle('hidden');
+            checkoutForm.classList.add('hidden');
+        });
+        document.getElementById('closeCartBtn').addEventListener('click', () => {
+            cartSection.classList.add('hidden');
+        });
+        document.getElementById('checkoutBtn').addEventListener('click', () => {
+            if (cart.length === 0) { showToast('🛒 Cart is empty'); return; }
+            checkoutForm.classList.remove('hidden');
+            cartSection.classList.add('hidden');
+        });
+        document.getElementById('cancelCheckoutBtn').addEventListener('click', () => {
+            checkoutForm.classList.add('hidden');
+            cartSection.classList.remove('hidden');
+        });
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  PLACE ORDER
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        document.getElementById('placeOrderBtn').addEventListener('click', async () => {
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const address = document.getElementById('clientAddress').value.trim();
+            if (!name || !phone || !address) { showToast('❌ Fill all fields'); return; }
+            if (cart.length === 0) { showToast('❌ Cart empty'); return; }
+
+            // Calculate total
+            const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+            // We need to find which shop owns these products (assume all products belong to one shop? We'll support multiple shops by grouping)
+            // For simplicity, we'll create one order per shop. But we can group by shopId.
+            // We'll get product IDs to check shop.
+            const productIds = cart.map(i => i.productId);
+            // Query products to get shopId (could optimize by storing shopId in product doc)
+            // We'll just loop and create separate orders per shop? Better: we'll assume all products belong to a single shop (first product's shop).
+            // For multi-shop, we'd need to split cart by shopId. For demo, we'll just take first product's shop.
+            const firstProduct = products.find(p => p.id === cart[0].productId);
+            if (!firstProduct) { showToast('❌ Product not found'); return; }
+            const shopId = firstProduct.shopId || 'defaultShop';
+
+            // Create order document
+            try {
+                await addDoc(collection(db, "shopOrders"), {
+                    shopId: shopId,
+                    clientName: name,
+                    phone: phone,
+                    address: address,
+                    items: cart.map(i => ({ productId: i.productId, name: i.name, qty: i.qty, price: i.price })),
+                    total: total,
+                    status: 'pending', // pending shop acceptance
+                    createdAt: serverTimestamp()
+                });
+                showToast('✅ Order placed! Shop owner will confirm.');
+                // Clear cart and form
+                cart = [];
+                updateCartUI();
+                document.getElementById('clientName').value = '';
+                document.getElementById('clientPhone').value = '';
+                document.getElementById('clientAddress').value = '';
+                checkoutForm.classList.add('hidden');
+                cartSection.classList.add('hidden');
+                // Also update product stock? We'll reduce stock when shop accepts.
+            } catch (e) {
+                showToast('❌ Error: ' + e.message);
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>
