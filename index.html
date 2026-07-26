@@ -3,286 +3,1192 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login · LIVRILY</title>
+    <title>LIVRILY · COD Manager</title>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #0F172A;
-        }
-        .box {
-            background: #1E293B;
-            padding: 34px 28px 28px;
-            border-radius: 24px;
-            width: 95%;
-            max-width: 380px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            border: 1px solid #334155;
-        }
-        .avatar {
-            width: 72px;
-            height: 72px;
-            background: #2563EB;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 14px;
-            color: #fff;
-            font-size: 34px;
-            font-weight: 700;
-            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
-        }
-        h2 {
-            text-align: center;
-            color: #F8FAFC;
-            font-weight: 600;
-            letter-spacing: -0.3px;
-            font-size: 24px;
-            margin-bottom: 6px;
-        }
-        .sub {
-            text-align: center;
-            color: #94A3B8;
-            font-size: 13px;
-            margin-bottom: 22px;
-        }
-        .box input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            background: #0F172A;
-            color: #F8FAFC;
-            font-size: 14px;
-            margin-top: 10px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .box input:focus {
-            border-color: #3B82F6;
-        }
-        .box input::placeholder {
-            color: #64748B;
-        }
-        .btn-login {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 18px;
-            background: #2563EB;
-            font-size: 15px;
-            transition: background 0.15s, transform 0.1s;
-        }
-        .btn-login:hover {
-            background: #1D4ED8;
-        }
-        .btn-login:active {
-            transform: scale(0.97);
-        }
-        .btn-login:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        #error {
-            color: #F87171;
-            text-align: center;
-            margin-top: 12px;
-            font-size: 13px;
-            min-height: 20px;
-            font-weight: 500;
-        }
-        .footnote {
-            font-size: 11px;
-            color: #64748B;
-            text-align: center;
-            margin-top: 16px;
-            line-height: 1.5;
-        }
-        .footnote span {
-            color: #38BDF8;
-        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif}
+        body{background:#0F172A;color:#F8FAFC;min-height:100vh}
+        .hidden{display:none !important}
+        #loginPage{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0F172A}
+        .login-box{background:#1E293B;padding:34px 28px 28px;border-radius:24px;width:95%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.6);border:1px solid #334155}
+        .login-box .avatar{width:72px;height:72px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#fff;font-size:34px;font-weight:700;box-shadow:0 8px 24px rgba(37,99,235,.35)}
+        .login-box h2{text-align:center;color:#F8FAFC;font-weight:600;font-size:24px;margin-bottom:6px}
+        .login-box .sub{text-align:center;color:#94A3B8;font-size:13px;margin-bottom:22px}
+        .login-box input{width:100%;padding:14px 16px;border:1px solid #334155;border-radius:12px;background:#0F172A;color:#F8FAFC;font-size:14px;margin-top:10px;outline:none;transition:border-color .2s}
+        .login-box input:focus{border-color:#3B82F6}
+        .login-box input::placeholder{color:#64748B}
+        .btn-login{width:100%;padding:15px;border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;margin-top:18px;background:#2563EB;font-size:15px;transition:background .15s,transform .1s}
+        .btn-login:hover{background:#1D4ED8}
+        .btn-login:active{transform:scale(.97)}
+        .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        #error{color:#F87171;text-align:center;margin-top:12px;font-size:13px;min-height:20px;font-weight:500}
+        .footnote{font-size:11px;color:#64748B;text-align:center;margin-top:16px;line-height:1.5}
+        #appShell{display:none}
+        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155}
+        .logo{color:#38BDF8;font-weight:700;font-size:18px}
+        .logo small{font-size:11px;background:#38BDF8;color:#0F172A;padding:2px 10px;border-radius:20px;margin-left:8px;font-weight:600}
+        .user-info{display:flex;align-items:center;gap:12px}
+        .user-info span{color:#94A3B8;font-size:12px}
+        .btn{padding:7px 14px;border:none;border-radius:8px;font-weight:600;font-size:12px;transition:.1s;cursor:pointer}
+        .btn:active{transform:scale(.96)}
+        .btn-danger{background:#DC2626;color:#fff}
+        .btn-danger:hover{background:#B91C1C}
+        .btn-primary{background:#2563EB;color:#fff}
+        .btn-primary:hover{background:#1D4ED8}
+        .btn-success{background:#16A34A;color:#fff}
+        .btn-success:hover{background:#15803D}
+        .btn-warning{background:#F59E0B;color:#0F172A}
+        .btn-warning:hover{background:#D97706}
+        .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}
+        .btn-outline:hover{background:#334155}
+        nav{display:flex;gap:6px;flex-wrap:wrap;background:#1E293B;padding:10px 16px;position:sticky;top:60px;z-index:999;border-bottom:1px solid #334155}
+        nav button{color:#CBD5E1;background:transparent;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:500;transition:.15s;cursor:pointer}
+        nav button:hover{background:#334155;color:#fff}
+        nav button.active{background:#2563EB;color:#fff}
+        .container{max-width:1200px;margin:0 auto;padding:14px}
+        .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px;border:1px solid #334155}
+        .card h2{color:#38BDF8;font-size:15px;margin-bottom:10px}
+        .card h3{font-size:13px;color:#CBD5E1}
+        .tab{display:none}
+        .tab.active{display:block}
+        .summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+        .summaryCard{background:#0F172A;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center}
+        .summaryCard h1{font-size:24px;margin-top:4px}
+        .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2D3748;font-size:12px}
+        .row:last-child{border-bottom:none}
+        table{width:100%;border-collapse:collapse;font-size:11px}
+        th{background:#2563EB;padding:8px 6px;color:#fff;text-align:center;white-space:nowrap}
+        td{padding:8px 6px;border-bottom:1px solid #334155;text-align:center;vertical-align:middle}
+        td small{color:#94A3B8;font-size:10px}
+        input,select,textarea{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:10px;background:#0F172A;color:#F8FAFC;font-size:13px;margin-top:6px;outline:none}
+        input:focus,select:focus,textarea:focus{border-color:#3B82F6}
+        label{display:block;margin-top:10px;font-size:12px;color:#CBD5E1}
+        #map,#mMap{height:380px;border-radius:12px;margin-top:10px}
+        #customerMap{height:220px;border-radius:12px;margin-top:10px;display:none}
+        .badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+        .badge-green{background:#16A34A;color:#fff}
+        .badge-red{background:#DC2626;color:#fff}
+        @media(max-width:600px){nav button{font-size:10px;padding:6px 10px}.summaryGrid{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
 
-    <div class="box">
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+    <div class="login-box">
         <div class="avatar">L</div>
         <h2>LIVRILY</h2>
         <p class="sub">Cash on Delivery · Driver Hub</p>
-
         <input type="email" id="email" placeholder="Email" autocomplete="username" />
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-
-        <button class="btn-login" id="loginBtn" type="button">LOGIN</button>
+        <button class="btn-login" id="loginBtn">LOGIN</button>
         <p id="error"></p>
-        <p class="footnote">
-            Manager + Driver access · <span>COD</span> · All fees free
-        </p>
+        <p class="footnote">Manager + Driver access · <strong style="color:#38BDF8;">COD</strong> · All fees free</p>
     </div>
+</div>
 
-    <script type="module">
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  FIREBASE INIT
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import {
-            getAuth,
-            signInWithEmailAndPassword,
-            signOut,
-            setPersistence,
-            inMemoryPersistence,
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import {
-            getFirestore,
-            doc,
-            getDoc
-        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+<!-- APP SHELL -->
+<div id="appShell">
+    <header>
+        <div class="logo">🚚 LIVRILY <small id="roleBadge">DRIVER</small></div>
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <button class="btn btn-danger" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+    <nav id="mainNav"></nav>
+    <div class="container">
+        <!-- DRIVER TABS -->
+        <div id="driverTabs">
+            <div id="tab-dashboard" class="tab active">
+                <div class="card">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <div style="width:50px;height:50px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;" id="avatar">A</div>
+                        <div>
+                            <h3 id="driverName">Driver</h3>
+                            <p style="color:#94A3B8;font-size:11px;" id="driverEmail"></p>
+                            <span id="status" style="background:#16A34A;padding:4px 12px;border-radius:20px;font-size:11px;">🟢 Available</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="toggleStatusBtn">Change Availability</button>
+                </div>
+                <div class="card">
+                    <h2>💰 Your Balance – Owe to Manager</h2>
+                    <h1 id="owe" style="text-align:center;color:#F59E0B;font-size:32px;">0 DA</h1>
+                    <p style="text-align:center;color:#94A3B8;font-size:11px;">You collected from clients – you owe this. Manager resets when you settle.</p>
+                    <div id="breakdown"></div>
+                </div>
+                <div class="card">
+                    <h2>📊 Today's Stats</h2>
+                    <div class="summaryGrid">
+                        <div class="summaryCard"><b id="completed">0</b><br><small>Orders</small></div>
+                        <div class="summaryCard"><b id="kept" style="color:#22C55E;">0 DA</b><br><small>You Kept</small></div>
+                        <div class="summaryCard"><b id="collected">0 DA</b><br><small>Collected</small></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📍 Share Location</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                        <button class="btn btn-success" id="startGpsBtn">📍 Start GPS</button>
+                        <button class="btn btn-danger" id="stopGpsBtn">⏹ Stop</button>
+                    </div>
+                    <p id="gpsStatus" style="font-size:11px;color:#94A3B8;margin-top:8px;">GPS not started</p>
+                </div>
+            </div>
+            <div id="tab-orders" class="tab">
+                <div class="card">
+                    <h2>📋 My Orders – Pickup & Delivery</h2>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Qty</th><th>Address</th><th>Client Total</th><th>You Owe</th><th>You Keep</th><th>Nav</th></tr></thead>
+                            <tbody id="ordersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="tab-map" class="tab">
+                <div class="card">
+                    <h2>🗺️ My Location + Customers</h2>
+                    <div id="map"></div>
+                    <button class="btn btn-primary" style="margin-top:10px;" id="centerMapBtn">📍 Center on Me</button>
+                </div>
+            </div>
+        </div>
+        <!-- MANAGER TABS -->
+        <div id="managerTabs" class="hidden">
+            <div id="tab-m-dashboard" class="tab active">
+                <div class="card"><h2>📊 Overview</h2><div class="summaryGrid">
+                        <div class="summaryCard"><h3>Orders</h3><h1 id="dash-orders">0</h1></div>
+                        <div class="summaryCard"><h3>To Collect</h3><h1 id="dash-toCollect" style="color:#F59E0B;">0 DA</h1></div>
+                        <div class="summaryCard"><h3>Your Income</h3><h1 id="dash-income" style="color:#22C55E;">0 DA</h1></div>
+                        <div class="summaryCard"><h3>Active Drivers</h3><h1 id="dash-active">0</h1></div>
+                </div></div>
+                <div class="card"><h2>🚗 Drivers Balances</h2><div id="dash-drivers"></div></div>
+                <div class="card"><h2>📋 Recent Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Your Income</th></tr></thead><tbody id="dash-recent"></tbody></table></div></div>
+            </div>
+            <div id="tab-m-new-order" class="tab">
+                <div class="card"><h2>👤 Customer</h2>
+                    <label>Name</label><input id="cName" placeholder="Customer name" />
+                    <label>Phone</label><input id="cPhone" placeholder="0550XXXXXX" />
+                    <label>Address</label><textarea id="cAddress" placeholder="Delivery address"></textarea>
+                    <button class="btn btn-warning" style="width:100%;margin-top:8px;" id="localizeBtn">📍 Localize Customer on Map</button>
+                    <div id="customerMap"></div>
+                    <p id="customerCoords" style="font-size:11px;color:#94A3B8;margin-top:6px;"></p>
+                    <label>Shop (optional)</label><input id="cShop" />
+                </div>
+                <div class="card"><h2>📦 Products – <span id="feeLabel">10 DA</span> per product</h2>
+                    <div style="overflow-x:auto;"><table><thead><tr><th>Product</th><th>Qty</th><th></th></tr></thead><tbody id="prodBody"><tr><td><input class="pName" placeholder="Product" /></td><td><input type="number" class="pQty" value="2" min="1" /></td><td><button class="btn btn-danger" type="button" onclick="this.closest('tr').remove(); window.calc();">❌</button></td></tr></tbody></table></div>
+                    <button class="btn btn-primary" style="margin-top:8px;" id="addProdBtn">➕ Add Product</button>
+                </div>
+                <div class="card"><h2>💵 Delivery Price</h2><input type="number" id="deliveryPrice" value="300" /></div>
+                <div class="card"><h2>🚗 Assign Driver</h2><select id="driverSelect"></select></div>
+                <div class="card"><h2>💰 Breakdown</h2>
+                    <div class="row"><span>Qty Total</span><b id="b-qty">0</b></div>
+                    <div class="row"><span>Client Fee</span><b id="b-clientFee">0 DA</b></div>
+                    <div class="row"><span>Client Total</span><b id="b-clientTotal">0 DA</b></div>
+                    <div class="row"><span>Manager 40%</span><b id="b-manager">0 DA</b></div>
+                    <div class="row"><span>Driver Owes / Your Income</span><b id="b-owes" style="color:#F59E0B;">0 DA</b></div>
+                    <div class="row"><span>Driver Keeps</span><b id="b-keeps" style="color:#22C55E;">0 DA</b></div>
+                </div>
+                <button class="btn btn-success" style="width:100%;padding:12px;" id="saveOrderBtn">💾 SAVE ORDER</button>
+            </div>
+            <div id="tab-m-orders" class="tab">
+                <div class="card"><input id="ordersSearch" placeholder="Search orders..." /></div>
+                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Qty</th><th>Your Income</th><th>Date</th><th>Del</th></tr></thead><tbody id="mOrdersBody"></tbody></table></div></div>
+            </div>
+            <div id="tab-m-map" class="tab">
+                <div class="card"><h2>🗺️ Live Map</h2><div id="mMap"></div><div id="mapDriversList" style="margin-top:10px;"></div></div>
+            </div>
+            <div id="tab-m-settlement" class="tab">
+                <div class="card"><div class="summaryGrid"><div class="summaryCard"><b id="set-toCollect" style="color:#F59E0B;">0 DA</b><br>To Collect</div><div class="summaryCard"><b id="set-collected">0 DA</b><br>Collected</div><div class="summaryCard"><b id="set-orders">0</b><br>Orders</div></div></div>
+                <div id="settlementGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;"></div>
+                <div class="card"><h2>📜 Settlement History</h2><div id="settlementHistory"></div></div>
+            </div>
+            <div id="tab-m-accounting" class="tab">
+                <div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input type="date" id="acc-date" /><input type="text" id="acc-search" placeholder="Search..." /></div></div>
+                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Your Income</th><th>Date</th></tr></thead><tbody id="acc-body"></tbody></table></div></div>
+            </div>
+            <div id="tab-m-settings" class="tab">
+                <div class="card"><h2>💰 Fee Settings</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;"><div><label>Client Fee / product (DA)</label><input type="number" id="set-clientFee" value="10" min="0" /></div><div><label>Driver App Fee (DA)</label><input type="number" id="set-driverApp" value="10" min="0" /></div><div><label>Manager %</label><input type="number" id="set-managerPct" value="40" min="0" max="100" /></div><div><label>Default Delivery (DA)</label><input type="number" id="set-defaultDelivery" value="300" min="0" /></div></div><div style="margin-top:10px;padding:10px;background:#0F172A;border-radius:8px;font-size:11px;" id="set-example"></div><button class="btn btn-primary" style="width:100%;margin-top:10px;" id="saveSettingsBtn">💾 Save Settings</button></div>
+                <div class="card"><h2>👥 Driver Management</h2>
+                    <div style="background:#0F172A;padding:12px;border-radius:10px;margin-bottom:10px;">
+                        <h3 style="color:#38BDF8;font-size:13px;margin-bottom:8px;" id="drvFormTitle">➕ Add New Driver</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label>Name *</label><input id="drv-name" /></div>
+                            <div><label>Phone</label><input id="drv-phone" /></div>
+                            <div><label>Vehicle</label><input id="drv-vehicle" /></div>
+                            <div><label>Email *</label><input id="drv-email" type="email" /></div>
+                            <div><label>Password * (6+ chars)</label><input id="drv-password" type="password" autocomplete="new-password" /></div>
+                            <div><label>Status</label><select id="drv-active"><option value="true">✅ Active</option><option value="false">❌ Deactivated</option></select></div>
+                        </div>
+                        <button class="btn btn-success" style="width:100%;margin-top:10px;" id="drv-saveBtn">Create Driver</button>
+                        <button class="btn btn-outline" style="width:100%;margin-top:6px;display:none;" id="drv-cancelBtn">Cancel Edit</button>
+                    </div>
+                    <div id="settingsDriversGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        const config = {
-            apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
-            authDomain: "livrily-a6e7e.firebaseapp.com",
-            projectId: "livrily-a6e7e",
-            storageBucket: "livrily-a6e7e.firebasestorage.app",
-            messagingSenderId: "904979289112",
-            appId: "1:904979289112:web:9981377a9500b940091f6d"
-        };
+<script type="module">
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  FIREBASE IMPORTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    setPersistence,
+    inMemoryPersistence
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    addDoc,
+    collection,
+    onSnapshot,
+    query,
+    orderBy,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-        let app;
-        try {
-            app = getApps().length ? getApp() : initializeApp(config);
-        } catch (_) {
-            app = initializeApp(config);
-        }
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+const config = {
+    apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+    authDomain: "livrily-a6e7e.firebaseapp.com",
+    projectId: "livrily-a6e7e",
+    storageBucket: "livrily-a6e7e.firebasestorage.app",
+    messagingSenderId: "904979289112",
+    appId: "1:904979289112:web:9981377a9500b940091f6d"
+};
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  MANAGER IDENTIFICATION  (email-based, more reliable)
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"];
-        const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+let app;
+try { app = getApps().length ? getApp() : initializeApp(config); } catch (_) { app = initializeApp(config); }
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-        function isManager(user) {
-            if (!user) return false;
-            if (user.uid === MANAGER_UID) return true;
-            if (user.email && MANAGER_EMAILS.includes(user.email.toLowerCase())) return true;
-            return false;
-        }
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  CONFIG – CHANGE MANAGER EMAIL HERE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"]; // ← put your manager email here
+const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  CLEAR SESSION ON LOAD  (in-memory only, no auto-login)
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        (async function init() {
+function isManager(user) {
+    if (!user) return false;
+    if (user.uid === MANAGER_UID) return true;
+    if (user.email && MANAGER_EMAILS.includes(user.email.toLowerCase())) return true;
+    return false;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  GLOBAL STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let currentUser = null;
+let currentRole = null;
+let unsubscribers = [];
+let settings = { clientFeePerProduct: 10, driverAppFee: 10, managerFeePercent: 40, defaultDeliveryPrice: 300 };
+let driversCache = [];
+let ordersCache = [];
+let settlementsCache = [];
+let locationsCache = {};
+
+// Map instances
+let driverMap = null,
+    managerMap = null,
+    customerMap = null;
+let driverMarker = null,
+    customerMarker = null;
+let customerLatLng = null;
+let watchId = null;
+let lastLocationSave = 0;
+
+// Editing driver
+let editingDriverId = null;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DOM REFS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const loginPage = document.getElementById('loginPage');
+const appShell = document.getElementById('appShell');
+const emailInput = document.getElementById('email');
+const passInput = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const errorEl = document.getElementById('error');
+const logoutBtn = document.getElementById('logoutBtn');
+const userEmailSpan = document.getElementById('userEmail');
+const roleBadge = document.getElementById('roleBadge');
+const mainNav = document.getElementById('mainNav');
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  AUTH
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function doLogin() {
+    const email = emailInput.value.trim();
+    const pass = passInput.value;
+    errorEl.innerText = '';
+    if (!email || !pass) { errorEl.innerText = 'Enter email and password.'; return; }
+    loginBtn.disabled = true;
+    loginBtn.innerText = 'Logging…';
+    try {
+        await setPersistence(auth, inMemoryPersistence);
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        const user = cred.user;
+        if (!isManager(user)) {
             try {
-                await setPersistence(auth, inMemoryPersistence);
-                await signOut(auth);
-            } catch (_) { /* ignore */ }
-
-            // If somehow already logged in, redirect
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    try {
-                        const snap = await getDoc(doc(db, "drivers", user.uid));
-                        const active = snap.exists() ? snap.data().active : true;
-                        if (active === false) {
-                            await signOut(auth);
-                            document.getElementById('error').innerText = 'Account deactivated.';
-                            return;
-                        }
-                        if (isManager(user)) {
-                            location.href = 'Manager.html';
-                        } else {
-                            location.href = 'Driver.html';
-                        }
-                    } catch (_) {
-                        // fallback: if driver doc missing, treat as driver
-                        if (!isManager(user)) location.href = 'Driver.html';
-                        else location.href = 'Manager.html';
-                    }
+                const snap = await getDoc(doc(db, "drivers", user.uid));
+                if (snap.exists() && snap.data().active === false) {
+                    errorEl.innerText = 'Account deactivated.';
+                    await signOut(auth);
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = 'LOGIN';
+                    return;
                 }
-            });
-        })();
+            } catch (_) {}
+        }
+        // onAuthStateChanged will handle routing
+    } catch (e) {
+        let msg = e.message.replace(/Firebase: /i, '').replace(/\(.*\)/, '').trim();
+        if (msg.includes('user-not-found')) msg = 'No account with this email.';
+        else if (msg.includes('wrong-password')) msg = 'Incorrect password.';
+        else if (msg.includes('invalid-email')) msg = 'Invalid email.';
+        else if (msg.includes('too-many-requests')) msg = 'Too many attempts. Wait.';
+        errorEl.innerText = msg;
+        loginBtn.disabled = false;
+        loginBtn.innerText = 'LOGIN';
+    }
+}
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOGIN HANDLER
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        const emailEl = document.getElementById('email');
-        const passEl = document.getElementById('password');
-        const errEl = document.getElementById('error');
-        const btn = document.getElementById('loginBtn');
+loginBtn.addEventListener('click', doLogin);
+passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-        async function doLogin() {
-            const email = emailEl.value.trim();
-            const pass = passEl.value;
-            errEl.innerText = '';
+logoutBtn.addEventListener('click', async () => {
+    try { await signOut(auth); } catch (_) {}
+    window.location.reload();
+});
 
-            if (!email || !pass) {
-                errEl.innerText = 'Enter email and password.';
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  ROUTING ON AUTH STATE CHANGE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+onAuthStateChanged(auth, async (user) => {
+    unsubscribers.forEach(fn => { try { fn(); } catch (_) {} });
+    unsubscribers = [];
+
+    if (!user) {
+        loginPage.style.display = 'flex';
+        appShell.style.display = 'none';
+        return;
+    }
+
+    if (!isManager(user)) {
+        try {
+            const snap = await getDoc(doc(db, "drivers", user.uid));
+            if (snap.exists() && snap.data().active === false) {
+                await signOut(auth);
+                loginPage.style.display = 'flex';
+                appShell.style.display = 'none';
+                errorEl.innerText = 'Account deactivated.';
                 return;
             }
+        } catch (_) {}
+    }
 
-            btn.disabled = true;
-            btn.innerText = 'Logging…';
+    currentUser = user;
+    userEmailSpan.innerText = user.email || user.uid;
 
-            try {
-                await setPersistence(auth, inMemoryPersistence);
-                const cred = await signInWithEmailAndPassword(auth, email, pass);
-                const user = cred.user;
+    if (isManager(user)) {
+        currentRole = 'manager';
+        roleBadge.innerText = 'MANAGER';
+        showManagerUI();
+    } else {
+        currentRole = 'driver';
+        roleBadge.innerText = 'DRIVER';
+        showDriverUI();
+    }
 
-                // Check if driver is deactivated (skip for manager)
-                if (!isManager(user)) {
-                    try {
-                        const snap = await getDoc(doc(db, "drivers", user.uid));
-                        if (snap.exists() && snap.data().active === false) {
-                            errEl.innerText = 'Account deactivated by manager.';
-                            await signOut(auth);
-                            btn.disabled = false;
-                            btn.innerText = 'LOGIN';
-                            return;
-                        }
-                    } catch (_) { /* ignore */ }
-                }
+    loginPage.style.display = 'none';
+    appShell.style.display = 'block';
 
-                // Redirect
-                if (isManager(user)) {
-                    location.href = 'Manager.html';
-                } else {
-                    location.href = 'Driver.html';
-                }
-            } catch (e) {
-                let msg = e.message.replace(/Firebase: /i, '').replace(/\(.*\)/, '').trim();
-                if (msg.includes('user-not-found')) msg = 'No account with this email.';
-                else if (msg.includes('wrong-password')) msg = 'Incorrect password.';
-                else if (msg.includes('invalid-email')) msg = 'Invalid email format.';
-                else if (msg.includes('too-many-requests')) msg = 'Too many attempts. Wait a moment.';
-                errEl.innerText = msg;
-                btn.disabled = false;
-                btn.innerText = 'LOGIN';
+    if (currentRole === 'driver') initDriver();
+    else initManager();
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  UI SWITCHING
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showDriverUI() {
+    document.getElementById('driverTabs').style.display = 'block';
+    document.getElementById('managerTabs').classList.add('hidden');
+    mainNav.innerHTML = `
+        <button class="active" data-tab="dashboard">🛵 My Dashboard</button>
+        <button data-tab="orders">📋 My Orders</button>
+        <button data-tab="map">🗺️ Map</button>
+    `;
+    attachNavEvents();
+    showTab('dashboard');
+}
+
+function showManagerUI() {
+    document.getElementById('driverTabs').style.display = 'none';
+    document.getElementById('managerTabs').classList.remove('hidden');
+    mainNav.innerHTML = `
+        <button class="active" data-tab="m-dashboard">📊 Dashboard</button>
+        <button data-tab="m-new-order">📦 New Order</button>
+        <button data-tab="m-orders">📋 Orders</button>
+        <button data-tab="m-map">🗺️ Live Map</button>
+        <button data-tab="m-settlement">💰 Settlement</button>
+        <button data-tab="m-accounting">💵 Accounting</button>
+        <button data-tab="m-settings">⚙️ Settings</button>
+    `;
+    attachNavEvents();
+    showTab('m-dashboard');
+}
+
+function attachNavEvents() {
+    document.querySelectorAll('#mainNav button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            showTab(tab);
+        });
+    });
+}
+
+function showTab(tabId) {
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById('tab-' + tabId);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+    document.querySelector(`#mainNav button[data-tab="${tabId}"]`)?.classList.add('active');
+    if (tabId === 'map' && driverMap) setTimeout(() => driverMap.invalidateSize(), 200);
+    if (tabId === 'm-map' && managerMap) setTimeout(() => managerMap.invalidateSize(), 200);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DRIVER LOGIC
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let driverOrders = [];
+let driverSettlements = [];
+
+function initDriver() {
+    const uid = currentUser.uid;
+    getDoc(doc(db, "drivers", uid)).then(snap => {
+        const data = snap.exists() ? snap.data() : {};
+        const name = data.name || currentUser.email.split('@')[0];
+        document.getElementById('driverName').innerText = name;
+        document.getElementById('driverEmail').innerText = currentUser.email;
+        document.getElementById('avatar').innerText = name[0].toUpperCase();
+    }).catch(console.error);
+
+    const unsub1 = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const myName = document.getElementById('driverName')?.innerText?.toLowerCase() || '';
+        const myEmail = currentUser.email.toLowerCase();
+        const myUid = currentUser.uid;
+        const emailPrefix = myEmail.split('@')[0].toLowerCase();
+
+        driverOrders = all.filter(o => {
+            if (o.driverId === myUid) return true;
+            if (o.driverEmail && o.driverEmail.toLowerCase() === myEmail) return true;
+            if (o.driverName && o.driverName.toLowerCase() === myName) return true;
+            if (o.driver && o.driver.toLowerCase() === myName) return true;
+            if (o.driver && o.driver.toLowerCase().includes(myName)) return true;
+            if (o.driverName && o.driverName.toLowerCase().includes(emailPrefix)) return true;
+            if (o.driver && o.driver.toLowerCase().includes(emailPrefix)) return true;
+            return false;
+        });
+        renderDriverDashboard();
+        renderDriverOrders();
+        updateDriverMapCustomers();
+    });
+    unsubscribers.push(unsub1);
+
+    const unsub2 = onSnapshot(query(collection(db, "settlements"), orderBy("createdAt", "desc")), (snap) => {
+        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const myName = document.getElementById('driverName')?.innerText || '';
+        driverSettlements = all.filter(s =>
+            s.driverId === currentUser.uid ||
+            s.driverEmail === currentUser.email ||
+            s.driverName === myName ||
+            s.driver === myName
+        );
+        renderDriverDashboard();
+    });
+    unsubscribers.push(unsub2);
+
+    if (!driverMap) {
+        driverMap = L.map('map').setView([35.6911, 0.6417], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(driverMap);
+    }
+
+    document.getElementById('toggleStatusBtn').addEventListener('click', () => {
+        const el = document.getElementById('status');
+        if (el.innerText.includes('Available')) {
+            el.innerText = '⚫ Offline';
+            el.style.background = '#64748B';
+        } else {
+            el.innerText = '🟢 Available';
+            el.style.background = '#16A34A';
+        }
+    });
+
+    document.getElementById('startGpsBtn').addEventListener('click', startGps);
+    document.getElementById('stopGpsBtn').addEventListener('click', stopGps);
+    document.getElementById('centerMapBtn').addEventListener('click', () => {
+        if (window.currentLocation && driverMap) driverMap.setView([window.currentLocation.lat, window.currentLocation.lng], 15);
+    });
+
+    window.navigateTo = function(orderId) {
+        const o = driverOrders.find(x => x.id === orderId);
+        if (!o) return;
+        if (o.customerLat && o.customerLng) {
+            window.open(`https://www.openstreetmap.org/?mlat=${o.customerLat}&mlon=${o.customerLng}#map=16/${o.customerLat}/${o.customerLng}`, '_blank');
+        } else if (o.address) {
+            window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(o.address)}`, '_blank');
+        }
+    };
+}
+
+function renderDriverDashboard() {
+    const totalOwed = driverOrders.reduce((a, b) => a + (b.yourIncome || 0), 0) - driverSettlements.reduce((a, b) => a + b.amount, 0);
+    const totalKept = driverOrders.reduce((a, b) => a + (b.driverKeeps || 0), 0);
+    const totalCollected = driverOrders.reduce((a, b) => a + (b.clientTotal || 0), 0);
+    const totalClientFee = driverOrders.reduce((a, b) => a + (b.clientFee || 0), 0);
+    const totalManager = driverOrders.reduce((a, b) => a + (b.managerFee || 0), 0);
+
+    document.getElementById('owe').innerText = totalOwed + ' DA';
+    document.getElementById('completed').innerText = driverOrders.length;
+    document.getElementById('kept').innerText = totalKept + ' DA';
+    document.getElementById('collected').innerText = totalCollected + ' DA';
+    document.getElementById('breakdown').innerHTML =
+        `<div class="row"><span>Client Fees</span><b>${totalClientFee} DA</b></div><div class="row"><span>Manager 40%</span><b>${totalManager} DA</b></div><div class="row"><span>App Fees</span><b>${driverOrders.length*10} DA</b></div>`;
+}
+
+function renderDriverOrders() {
+    const tbody = document.getElementById('ordersBody');
+    if (!tbody) return;
+    tbody.innerHTML = driverOrders.map(o => {
+        const prodText = (o.products || []).map(p => `${p.name} x${p.qty}`).join(', ') || `${o.qty||0} products`;
+        return `<tr>
+            <td>${o.id?.slice(0,5)||''}</td>
+            <td>${o.customer||''}<br><small>${o.phone||''}</small></td>
+            <td style="max-width:120px;white-space:pre-wrap;"><b>${prodText}</b></td>
+            <td>${o.qty||0}</td>
+            <td style="max-width:120px;white-space:pre-wrap;">${o.address||''}<br><small>${o.shop||''}</small></td>
+            <td>${o.clientTotal||0} DA</td>
+            <td style="color:#F59E0B;"><b>${o.yourIncome||0} DA</b></td>
+            <td style="color:#22C55E;">${o.driverKeeps||0} DA</td>
+            <td><button class="btn btn-primary" onclick="navigateTo('${o.id}')">🧭</button><br><small>${o.status||''}</small></td>
+        </tr>`;
+    }).join('') || '<tr><td colspan="9" style="color:#94A3B8;">No orders yet.</td></tr>';
+}
+
+function updateDriverMapCustomers() {
+    if (!driverMap) return;
+    for (const key in window.customerMarkers) {
+        try { driverMap.removeLayer(window.customerMarkers[key]); } catch (_) {}
+    }
+    window.customerMarkers = {};
+    driverOrders.forEach(o => {
+        if (o.customerLat && o.customerLng) {
+            const m = L.marker([o.customerLat, o.customerLng]).addTo(driverMap)
+                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}`);
+            window.customerMarkers[o.id] = m;
+        }
+    });
+}
+
+async function startGps() {
+    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+    document.getElementById('gpsStatus').innerText = '📍 Tracking...';
+    watchId = navigator.geolocation.watchPosition(async (pos) => {
+        const now = Date.now();
+        if (now - lastLocationSave < 10000) return;
+        lastLocationSave = now;
+        const lat = pos.coords.latitude,
+            lng = pos.coords.longitude;
+        window.currentLocation = { lat, lng };
+        if (driverMap) {
+            if (!driverMarker) {
+                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You');
+            } else {
+                driverMarker.setLatLng([lat, lng]);
             }
         }
+        await setDoc(doc(db, "locations", currentUser.uid), {
+            lat,
+            lng,
+            updatedAt: serverTimestamp(),
+            driverId: currentUser.uid,
+            driverName: document.getElementById('driverName').innerText
+        }, { merge: true });
+        document.getElementById('gpsStatus').innerText = `✅ Shared: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }, (err) => {
+        document.getElementById('gpsStatus').innerText = 'GPS error: ' + err.message;
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+}
 
-        btn.addEventListener('click', doLogin);
-        passEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') doLogin();
+function stopGps() {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    document.getElementById('gpsStatus').innerText = '⏹ GPS stopped';
+    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  MANAGER LOGIC
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initManager() {
+    const unsub1 = onSnapshot(doc(db, "settings", "global"), (snap) => {
+        if (snap.exists()) settings = { ...settings, ...snap.data() };
+        updateSettingsUI();
+        calc();
+    });
+    unsubscribers.push(unsub1);
+
+    const unsub2 = onSnapshot(collection(db, "drivers"), (snap) => {
+        driversCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDriverSelect();
+        renderDashboard();
+        renderOrders();
+        renderSettlement();
+        renderSettingsDrivers();
+        updateMapDriversList();
+    });
+    unsubscribers.push(unsub2);
+
+    const unsub3 = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
+        ordersCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDashboard();
+        renderOrders();
+        renderSettlement();
+        updateMapMarkers();
+        renderAccounting();
+    });
+    unsubscribers.push(unsub3);
+
+    const unsub4 = onSnapshot(query(collection(db, "settlements"), orderBy("createdAt", "desc")), (snap) => {
+        settlementsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDashboard();
+        renderSettlement();
+    });
+    unsubscribers.push(unsub4);
+
+    const unsub5 = onSnapshot(collection(db, "locations"), (snap) => {
+        locationsCache = {};
+        snap.forEach(d => { locationsCache[d.id] = d.data(); });
+        updateMapMarkers();
+        updateMapDriversList();
+    });
+    unsubscribers.push(unsub5);
+
+    if (!managerMap) {
+        managerMap = L.map('mMap').setView([35.6911, 0.6417], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(managerMap);
+    }
+
+    document.getElementById('localizeBtn').addEventListener('click', localizeCustomer);
+    document.getElementById('addProdBtn').addEventListener('click', addProductRow);
+    document.getElementById('saveOrderBtn').addEventListener('click', saveOrder);
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+    document.getElementById('drv-saveBtn').addEventListener('click', saveDriver);
+    document.getElementById('drv-cancelBtn').addEventListener('click', cancelEditDriver);
+    document.getElementById('ordersSearch').addEventListener('keyup', () => renderOrders());
+    document.getElementById('acc-date').addEventListener('change', renderAccounting);
+    document.getElementById('acc-search').addEventListener('keyup', renderAccounting);
+
+    document.querySelectorAll('.pQty').forEach(i => i.addEventListener('input', calc));
+    document.getElementById('deliveryPrice').addEventListener('input', calc);
+    window.calc = calc;
+}
+
+function updateSettingsUI() {
+    document.getElementById('set-clientFee').value = settings.clientFeePerProduct || 10;
+    document.getElementById('set-driverApp').value = settings.driverAppFee || 10;
+    document.getElementById('set-managerPct').value = settings.managerFeePercent || 40;
+    document.getElementById('set-defaultDelivery').value = settings.defaultDeliveryPrice || 300;
+    document.getElementById('feeLabel').innerText = (settings.clientFeePerProduct || 10) + ' DA';
+    document.getElementById('deliveryPrice').value = settings.defaultDeliveryPrice || 300;
+    const ex = document.getElementById('set-example');
+    const cf = settings.clientFeePerProduct || 10,
+        da = settings.driverAppFee || 10,
+        mp = settings.managerFeePercent || 40,
+        del = settings.defaultDeliveryPrice || 300;
+    const qty = 2,
+        cFee = qty * cf,
+        mFee = Math.round(del * mp / 100),
+        owes = cFee + da + mFee,
+        keeps = del - mFee - da;
+    ex.innerHTML =
+        `Example ${qty} products, Delivery ${del} DA:<br>Client Fee ${qty}x${cf}=${cFee} DA, Client Total ${del+cFee} DA, Manager ${mFee} DA, Driver Owes ${owes} DA, Keeps ${keeps} DA`;
+}
+
+function calc() {
+    let qty = 0;
+    document.querySelectorAll('.pQty').forEach(i => qty += parseInt(i.value) || 0);
+    const delivery = parseFloat(document.getElementById('deliveryPrice').value) || settings.defaultDeliveryPrice || 300;
+    const clientFee = qty * (settings.clientFeePerProduct || 10);
+    const managerFee = Math.round(delivery * (settings.managerFeePercent || 40) / 100);
+    const driverApp = settings.driverAppFee || 10;
+    const owes = clientFee + driverApp + managerFee;
+    const keeps = delivery - managerFee - driverApp;
+    const clientTotal = delivery + clientFee;
+    document.getElementById('b-qty').innerText = qty;
+    document.getElementById('b-clientFee').innerText = clientFee + ' DA';
+    document.getElementById('b-clientTotal').innerText = clientTotal + ' DA';
+    document.getElementById('b-manager').innerText = managerFee + ' DA';
+    document.getElementById('b-owes').innerText = owes + ' DA';
+    document.getElementById('b-keeps').innerText = keeps + ' DA';
+}
+
+function addProductRow() {
+    const tbody = document.getElementById('prodBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+        `<td><input class="pName" placeholder="Product" /></td><td><input type="number" class="pQty" value="1" min="1" /></td><td><button class="btn btn-danger" type="button">❌</button></td>`;
+    tr.querySelector('button').addEventListener('click', () => { tr.remove();
+        calc(); });
+    tr.querySelector('.pQty').addEventListener('input', calc);
+    tbody.appendChild(tr);
+    calc();
+}
+
+async function localizeCustomer() {
+    const addr = document.getElementById('cAddress').value.trim();
+    if (!addr) { alert('Enter address'); return; }
+    const mapEl = document.getElementById('customerMap');
+    mapEl.style.display = 'block';
+    if (!customerMap) {
+        customerMap = L.map('customerMap').setView([35.6911, 0.6417], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(customerMap);
+    }
+    document.getElementById('customerCoords').innerText = '🔍 Searching...';
+    try {
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
+        const data = await res.json();
+        if (!data || !data.length) { document.getElementById('customerCoords').innerText = '❌ Not found'; return; }
+        const lat = parseFloat(data[0].lat),
+            lng = parseFloat(data[0].lon);
+        customerLatLng = { lat, lng, display: data[0].display_name };
+        customerMap.setView([lat, lng], 15);
+        if (customerMarker) customerMap.removeLayer(customerMarker);
+        customerMarker = L.marker([lat, lng]).addTo(customerMap).bindPopup(addr).openPopup();
+        document.getElementById('customerCoords').innerText =
+            `✅ ${data[0].display_name} | ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        setTimeout(() => customerMap.invalidateSize(), 200);
+    } catch (e) {
+        document.getElementById('customerCoords').innerText = 'Error: ' + e.message;
+    }
+}
+
+async function saveOrder() {
+    try {
+        let qty = 0,
+            products = [];
+        document.querySelectorAll('#prodBody tr').forEach(tr => {
+            const name = tr.querySelector('.pName')?.value || 'Product';
+            const q = parseInt(tr.querySelector('.pQty')?.value) || 1;
+            qty += q;
+            products.push({ name, qty: q });
         });
-        emailEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') passEl.focus();
+        if (qty === 0) { alert('Add at least one product with qty.'); return; }
+        const delivery = parseFloat(document.getElementById('deliveryPrice').value) || settings.defaultDeliveryPrice;
+        const clientFee = qty * settings.clientFeePerProduct;
+        const managerFee = Math.round(delivery * settings.managerFeePercent / 100);
+        const driverApp = settings.driverAppFee;
+        const owes = clientFee + driverApp + managerFee;
+        const keeps = delivery - managerFee - driverApp;
+        const clientTotal = delivery + clientFee;
+        const driverSelect = document.getElementById('driverSelect');
+        const driverId = driverSelect.value;
+        const driverDoc = driversCache.find(d => d.id === driverId);
+        if (!driverId) { alert('Select a driver.'); return; }
+        const orderData = {
+            customer: document.getElementById('cName').value || 'Customer',
+            phone: document.getElementById('cPhone').value || '',
+            address: document.getElementById('cAddress').value || '',
+            customerLat: customerLatLng?.lat || null,
+            customerLng: customerLatLng?.lng || null,
+            shop: document.getElementById('cShop').value || '',
+            products,
+            qty,
+            deliveryPrice: delivery,
+            clientFee,
+            clientTotal,
+            managerFee,
+            driverAppFee: driverApp,
+            managerPercent: settings.managerFeePercent,
+            clientFeePerProduct: settings.clientFeePerProduct,
+            yourIncome: owes,
+            driverKeeps: keeps,
+            driver: driverDoc?.name || driverId,
+            driverId: driverId,
+            driverEmail: driverDoc?.email || '',
+            driverName: driverDoc?.name || driverId,
+            date: new Date().toISOString().slice(0, 10),
+            time: new Date().toLocaleTimeString(),
+            status: 'Assigned',
+            createdAt: serverTimestamp()
+        };
+        await addDoc(collection(db, "orders"), orderData);
+        alert('✅ Order saved! Driver will see it.');
+        customerLatLng = null;
+        document.getElementById('customerMap').style.display = 'none';
+        document.getElementById('customerCoords').innerText = '';
+        document.querySelectorAll('#prodBody tr').forEach((tr, i) => { if (i > 0) tr.remove(); });
+        document.getElementById('cName').value = '';
+        document.getElementById('cPhone').value = '';
+        document.getElementById('cAddress').value = '';
+        document.getElementById('cShop').value = '';
+        document.querySelector('.pName').value = '';
+        document.querySelector('.pQty').value = 2;
+        calc();
+        showTab('m-orders');
+    } catch (e) { alert('Error: ' + e.message);
+        console.error(e); }
+}
+
+function renderDriverSelect() {
+    const sel = document.getElementById('driverSelect');
+    if (!sel) return;
+    const active = driversCache.filter(d => d.active !== false);
+    sel.innerHTML = active.map(d =>
+        `<option value="${d.id}">${d.name} - ${d.vehicle||''} (${d.email||''})</option>`
+    ).join('') || '<option>No active drivers</option>';
+}
+
+function renderDashboard() {
+    const bal = getBalances();
+    let totalToCollect = 0,
+        totalIncome = 0;
+    ordersCache.forEach(o => { totalIncome += o.yourIncome || 0; });
+    Object.values(bal).forEach(b => totalToCollect += b.totalOwed);
+    document.getElementById('dash-orders').innerText = ordersCache.length;
+    document.getElementById('dash-toCollect').innerText = totalToCollect + ' DA';
+    document.getElementById('dash-income').innerText = totalIncome + ' DA';
+    document.getElementById('dash-active').innerText = driversCache.filter(d => d.active !== false).length;
+
+    const list = document.getElementById('dash-drivers');
+    let html = '';
+    Object.entries(bal).forEach(([id, b]) => {
+        const name = driversCache.find(d => d.id === id)?.name || b.name || id;
+        html +=
+            `<div class="row"><span>🚗 ${name} (${b.orderCount})</span><b style="color:${b.totalOwed>0?'#F59E0B':'#22C55E'}">${b.totalOwed} DA</b></div>`;
+    });
+    list.innerHTML = html || '<p style="color:#94A3B8;">No orders yet.</p>';
+
+    const tbody = document.getElementById('dash-recent');
+    tbody.innerHTML = ordersCache.slice(0, 8).map(o => {
+        const prod = (o.products || []).map(p => p.name).join(', ').slice(0, 30);
+        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${prod||''}</td><td>${o.driverName||o.driver||''}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td></tr>`;
+    }).join('') || '<tr><td colspan="5" style="color:#94A3B8;">No orders</td></tr>';
+}
+
+function getBalances() {
+    const bal = {};
+    ordersCache.forEach(o => {
+        const id = o.driverId || o.driver;
+        if (!bal[id]) bal[id] = { totalOwed: 0, orderCount: 0, name: o.driverName || o.driver || id };
+        bal[id].totalOwed += o.yourIncome || 0;
+        bal[id].orderCount++;
+    });
+    settlementsCache.forEach(s => {
+        const id = s.driverId || s.driver;
+        if (bal[id]) bal[id].totalOwed -= s.amount;
+        else {
+            const found = Object.keys(bal).find(k => bal[k].name === s.driverName || bal[k].name === s.driver);
+            if (found) bal[found].totalOwed -= s.amount;
+        }
+    });
+    return bal;
+}
+
+function renderOrders() {
+    const filter = document.getElementById('ordersSearch')?.value.toUpperCase() || '';
+    const tbody = document.getElementById('mOrdersBody');
+    if (!tbody) return;
+    const filtered = ordersCache.filter(o =>
+        (o.customer + ' ' + (o.driverName || o.driver || '') + ' ' + (o.products?.map(p => p.name).join(' ') || ''))
+        .toUpperCase().includes(filter)
+    );
+    tbody.innerHTML = filtered.map(o => {
+        const prodText = (o.products || []).map(p => `${p.name} x${p.qty}`).join(', ') || '';
+        return `<tr>
+            <td>${o.id?.slice(0,5)||''}</td>
+            <td>${o.customer||''}<br><small>${o.address||''}</small></td>
+            <td>${prodText.slice(0,40)||''}</td>
+            <td>${o.driverName||o.driver||''}</td>
+            <td>${o.qty||0}</td>
+            <td style="color:#F59E0B;">${o.yourIncome||0} DA</td>
+            <td>${o.date||''}</td>
+            <td><button class="btn btn-danger" data-id="${o.id}">🗑</button></td>
+        </tr>`;
+    }).join('') || '<tr><td colspan="8" style="color:#94A3B8;">No orders</td></tr>';
+    tbody.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Delete order?')) return;
+            try { await deleteDoc(doc(db, "orders", btn.dataset.id)); } catch (e) { alert(e.message); }
         });
-    </script>
+    });
+}
+
+function renderSettlement() {
+    const bal = {};
+    ordersCache.forEach(o => {
+        const id = o.driverId || o.driver;
+        const name = o.driverName || o.driver || id;
+        if (!bal[id]) bal[id] = { id, name, totalOwed: 0, totalCollected: 0, orderCount: 0 };
+        bal[id].totalOwed += o.yourIncome || 0;
+        bal[id].totalCollected += o.clientTotal || 0;
+        bal[id].orderCount++;
+    });
+    settlementsCache.forEach(s => {
+        const id = s.driverId || s.driver;
+        if (bal[id]) bal[id].totalOwed -= s.amount;
+        else {
+            const found = Object.keys(bal).find(k => bal[k].name === s.driverName || bal[k].name === s.driver);
+            if (found) bal[found].totalOwed -= s.amount;
+        }
+    });
+
+    let totalToCollect = 0,
+        totalOrders = 0;
+    Object.values(bal).forEach(b => { totalToCollect += b.totalOwed;
+        totalOrders += b.orderCount; });
+    document.getElementById('set-toCollect').innerText = totalToCollect + ' DA';
+    document.getElementById('set-orders').innerText = totalOrders;
+    document.getElementById('set-collected').innerText = settlementsCache.reduce((a, b) => a + b.amount, 0) + ' DA';
+
+    const grid = document.getElementById('settlementGrid');
+    grid.innerHTML = Object.values(bal).map(b => `
+        <div class="card" style="margin:0;background:#0F172A;border:1px solid ${b.totalOwed>0?'#F59E0B':'#22C55E'};">
+            <div style="display:flex;justify-content:space-between;"><div><b>${b.name}</b><br><small>${b.orderCount} orders</small></div><b style="font-size:18px;color:${b.totalOwed>0?'#F59E0B':'#22C55E'};">${b.totalOwed} DA</b></div>
+            <div class="row"><span>Collected</span><b>${b.totalCollected} DA</b></div>
+            <button class="btn btn-success" style="width:100%;margin-top:8px;" data-settle-id="${b.id}" data-settle-name="${b.name}" data-settle-amount="${b.totalOwed}" ${b.totalOwed<=0?'disabled style=opacity:.3;':''}>💰 Settle & Reset – Take ${b.totalOwed} DA</button>
+        </div>
+    `).join('') || '<p style="color:#94A3B8;">No orders yet.</p>';
+
+    grid.querySelectorAll('button[data-settle-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.settleId;
+            const name = btn.dataset.settleName;
+            const amount = parseFloat(btn.dataset.settleAmount);
+            if (amount <= 0) return;
+            if (!confirm(`Take ${amount} DA from ${name} and reset to 0?`)) return;
+            try {
+                await addDoc(collection(db, "settlements"), {
+                    driverId: id,
+                    driverName: name,
+                    driver: name,
+                    amount,
+                    date: new Date().toISOString().slice(0, 10),
+                    time: new Date().toLocaleTimeString(),
+                    createdAt: serverTimestamp()
+                });
+                alert(`✅ Collected ${amount} DA from ${name}`);
+            } catch (e) { alert(e.message); }
+        });
+    });
+
+    const hist = document.getElementById('settlementHistory');
+    hist.innerHTML = settlementsCache.length === 0 ? '<p style="color:#64748B;">No settlements yet.</p>' :
+        settlementsCache.slice(0, 20).map(s =>
+            `<div class="row"><span>✅ ${s.driverName||s.driver} settled ${s.amount} DA</span><small>${s.date||''} ${s.time||''}</small></div>`
+        ).join('');
+}
+
+function renderAccounting() {
+    const dateFilter = document.getElementById('acc-date')?.value || '';
+    const search = document.getElementById('acc-search')?.value.toUpperCase() || '';
+    const filtered = ordersCache.filter(o => {
+        if (dateFilter && o.date !== dateFilter) return false;
+        if (search && !(o.customer + ' ' + (o.driverName || o.driver || '')).toUpperCase().includes(search))
+            return false;
+        return true;
+    });
+    const tbody = document.getElementById('acc-body');
+    tbody.innerHTML = filtered.map(o => `
+        <tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>
+    `).join('') || '<tr><td colspan="5" style="color:#94A3B8;">No data</td></tr>';
+}
+
+function updateMapMarkers() {
+    if (!managerMap) return;
+    for (const key in window.managerMarkers) {
+        try { managerMap.removeLayer(window.managerMarkers[key]); } catch (_) {}
+    }
+    window.managerMarkers = {};
+    Object.entries(locationsCache).forEach(([id, loc]) => {
+        if (!loc.lat || !loc.lng) return;
+        const name = driversCache.find(d => d.id === id)?.name || id;
+        const m = L.marker([loc.lat, loc.lng]).addTo(managerMap).bindPopup(`🚗 ${name}`);
+        window.managerMarkers['driver_' + id] = m;
+    });
+    ordersCache.forEach(o => {
+        if (o.customerLat && o.customerLng) {
+            const m = L.marker([o.customerLat, o.customerLng]).addTo(managerMap)
+                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}`);
+            window.managerMarkers['cust_' + o.id] = m;
+        }
+    });
+}
+
+function updateMapDriversList() {
+    const el = document.getElementById('mapDriversList');
+    if (!el) return;
+    let html = '';
+    Object.entries(locationsCache).forEach(([id, loc]) => {
+        if (!loc.lat) return;
+        const name = driversCache.find(d => d.id === id)?.name || id;
+        html += `<div class="row"><span>🚗 ${name} – ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}</span></div>`;
+    });
+    html += ordersCache.filter(o => o.customerLat).map(o =>
+        `<div class="row"><span>📍 ${o.customer} – ${o.address||''}</span></div>`
+    ).join('');
+    el.innerHTML = html || '<p style="color:#94A3B8;">No locations yet.</p>';
+}
+async function saveSettings() {
+    try {
+        const newSet = {
+            clientFeePerProduct: parseFloat(document.getElementById('set-clientFee').value) || 10,
+            driverAppFee: parseFloat(document.getElementById('set-driverApp').value) || 10,
+            managerFeePercent: parseFloat(document.getElementById('set-managerPct').value) || 40,
+            defaultDeliveryPrice: parseFloat(document.getElementById('set-defaultDelivery').value) || 300,
+            updatedAt: serverTimestamp()
+        };
+        await setDoc(doc(db, "settings", "global"), newSet, { merge: true });
+        alert('✅ Settings saved.');
+    } catch (e) { alert(e.message); }
+}
+
+function renderSettingsDrivers() {
+    const grid = document.getElementById('settingsDriversGrid');
+    grid.innerHTML = driversCache.map(d => `
+        <div class="card" style="margin:0;background:#0F172A;border:1px solid ${d.active===false?'#DC2626':'#334155'};">
+            <div style="display:flex;justify-content:space-between;"><div><b>${d.name}</b><br><small style="color:#94A3B8;">${d.email||''}<br>${d.phone||''} – ${d.vehicle||''}</small></div><span class="badge ${d.active===false?'badge-red':'badge-green'}">${d.active===false?'INACTIVE':'ACTIVE'}</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+                <button class="btn btn-primary" data-edit="${d.id}">✏️ Edit</button>
+                <button class="btn ${d.active===false?'btn-success':'btn-warning'}" data-toggle="${d.id}" data-active="${d.active===false}">${d.active===false?'✅ Activate':'⏸ Deactivate'}</button>
+                <button class="btn btn-danger" style="grid-column:span 2;" data-del="${d.id}">🗑 Delete</button>
+            </div>
+        </div>
+    `).join('') || '<p style="color:#94A3B8;">No drivers – add one above.</p>';
+
+    grid.querySelectorAll('button[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.edit;
+            const d = driversCache.find(x => x.id === id);
+            if (!d) return;
+            editingDriverId = id;
+            document.getElementById('drv-name').value = d.name || '';
+            document.getElementById('drv-phone').value = d.phone || '';
+            document.getElementById('drv-vehicle').value = d.vehicle || '';
+            document.getElementById('drv-email').value = d.email || '';
+            document.getElementById('drv-password').value = '';
+            document.getElementById('drv-active').value = d.active === false ? 'false' : 'true';
+            document.getElementById('drvFormTitle').innerText = '✏️ Edit Driver: ' + d.name;
+            document.getElementById('drv-saveBtn').innerText = 'Update Driver';
+            document.getElementById('drv-cancelBtn').style.display = 'block';
+            showTab('m-settings');
+        });
+    });
+
+    grid.querySelectorAll('button[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.toggle;
+            const makeActive = btn.dataset.active === 'true';
+            try {
+                await updateDoc(doc(db, "drivers", id), { active: makeActive });
+                alert(makeActive ? '✅ Activated' : '⏸ Deactivated');
+            } catch (e) { alert(e.message); }
+        });
+    });
+
+    grid.querySelectorAll('button[data-del]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Delete driver?')) return;
+            try { await deleteDoc(doc(db, "drivers", btn.dataset.del));
+                alert('✅ Deleted'); } catch (e) { alert(e.message); }
+        });
+    });
+}
+
+async function saveDriver() {
+    try {
+        const name = document.getElementById('drv-name').value.trim();
+        const phone = document.getElementById('drv-phone').value.trim();
+        const vehicle = document.getElementById('drv-vehicle').value.trim();
+        const email = document.getElementById('drv-email').value.trim();
+        const password = document.getElementById('drv-password').value;
+        const active = document.getElementById('drv-active').value === 'true';
+        if (!name || !email) { alert('Name and Email are required.'); return; }
+        const btn = document.getElementById('drv-saveBtn');
+        btn.innerText = 'Saving…';
+        btn.disabled = true;
+
+        if (editingDriverId) {
+            await updateDoc(doc(db, "drivers", editingDriverId), { name, phone, vehicle, email, active,
+                updatedAt: serverTimestamp() });
+            alert('✅ Driver updated.');
+            cancelEditDriver();
+        } else {
+            if (!password || password.length < 6) { alert('Password must be at least 6 characters.'); btn
+                    .innerText = 'Create Driver';
+                btn.disabled = false; return; }
+            let secondaryApp;
+            try { secondaryApp = getApp("Secondary"); } catch (_) { secondaryApp = initializeApp(config,
+                    "Secondary"); }
+            const secondaryAuth = getAuth(secondaryApp);
+            const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+            const uid = cred.user.uid;
+            await setDoc(doc(db, "drivers", uid), { name, phone, vehicle, email, active, uid,
+                createdAt: serverTimestamp() });
+            await signOut(secondaryAuth);
+            alert('✅ Driver created: ' + name);
+            document.getElementById('drv-name').value = '';
+            document.getElementById('drv-phone').value = '';
+            document.getElementById('drv-vehicle').value = '';
+            document.getElementById('drv-email').value = '';
+            document.getElementById('drv-password').value = '';
+        }
+        btn.innerText = editingDriverId ? 'Update Driver' : 'Create Driver';
+        btn.disabled = false;
+    } catch (e) {
+        alert('Error: ' + e.message);
+        console.error(e);
+        document.getElementById('drv-saveBtn').innerText = 'Create Driver';
+        document.getElementById('drv-saveBtn').disabled = false;
+    }
+}
+
+function cancelEditDriver() {
+    editingDriverId = null;
+    document.getElementById('drvFormTitle').innerText = '➕ Add New Driver';
+    document.getElementById('drv-saveBtn').innerText = 'Create Driver';
+    document.getElementById('drv-cancelBtn').style.display = 'none';
+    document.getElementById('drv-name').value = '';
+    document.getElementById('drv-phone').value = '';
+    document.getElementById('drv-vehicle').value = '';
+    document.getElementById('drv-email').value = '';
+    document.getElementById('drv-password').value = '';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  INITIAL SETUP – ensure login page visible
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+loginPage.style.display = 'flex';
+appShell.style.display = 'none';
+document.getElementById('driverTabs').style.display = 'block';
+document.getElementById('managerTabs').classList.add('hidden');
+
+console.log('✅ LIVRILY single‑file app ready. Set your manager email in the code.');
+</script>
 </body>
 </html>
+  
