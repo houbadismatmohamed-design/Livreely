@@ -62,7 +62,6 @@
     </header>
 
     <div class="container">
-        <!-- Tab buttons -->
         <div class="tab-buttons">
             <button class="active" data-tab="shop">🛒 Shop</button>
             <button data-tab="track">📦 Track Orders</button>
@@ -75,7 +74,6 @@
                 <div id="productsGrid" class="product-grid"></div>
             </div>
 
-            <!-- Cart -->
             <div id="cartSection" class="card hidden">
                 <h2>🛒 Your Cart</h2>
                 <div id="cartItems"></div>
@@ -84,7 +82,6 @@
                 <button class="btn btn-outline" id="closeCartBtn" style="width:100%;margin-top:6px;">Close Cart</button>
             </div>
 
-            <!-- Checkout Form -->
             <div id="checkoutForm" class="card hidden">
                 <h2>📋 Delivery Details</h2>
                 <label>Full Name</label><input id="clientName" placeholder="Your name" />
@@ -97,7 +94,7 @@
             </div>
         </div>
 
-        <!-- Track Orders Tab -->
+        <!-- Track Tab -->
         <div id="tab-track" class="tab">
             <div class="card">
                 <h2>📦 Track Your Orders</h2>
@@ -111,13 +108,9 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
     <script type="module">
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  FIREBASE IMPORTS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -134,14 +127,10 @@
         try { app = getApps().length ? getApp() : initializeApp(config); } catch (_) { app = initializeApp(config); }
         const db = getFirestore(app);
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  STATE
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let products = [];
         let cart = [];
         let ordersCache = [];
 
-        // DOM refs
         const productsGrid = document.getElementById('productsGrid');
         const cartItems = document.getElementById('cartItems');
         const cartTotal = document.getElementById('cartTotal');
@@ -151,9 +140,6 @@
         const toast = document.getElementById('toast');
         const trackResults = document.getElementById('trackResults');
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TOAST
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let toastTimer;
         function showToast(msg) {
             toast.textContent = msg;
@@ -162,9 +148,6 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOAD PRODUCTS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         onSnapshot(collection(db, "products"), (snap) => {
             products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderProducts();
@@ -215,9 +198,6 @@
             showToast('🗑️ Removed from cart');
         };
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  CART UI TOGGLES
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         document.getElementById('viewCartBtn').addEventListener('click', () => {
             cartSection.classList.toggle('hidden');
             checkoutForm.classList.add('hidden');
@@ -235,9 +215,6 @@
             cartSection.classList.remove('hidden');
         });
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  PLACE ORDER
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         document.getElementById('placeOrderBtn').addEventListener('click', async () => {
             const name = document.getElementById('clientName').value.trim();
             const phone = document.getElementById('clientPhone').value.trim();
@@ -268,7 +245,6 @@
                     createdAt: serverTimestamp()
                 });
                 showToast('✅ Order placed! Shop owner will confirm.');
-                // Clear cart and form
                 cart = [];
                 updateCartUI();
                 document.getElementById('clientName').value = '';
@@ -282,22 +258,18 @@
             }
         });
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TRACK ORDERS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // ─── TRACK ORDERS ───
         let ordersUnsubscribe = null;
 
         document.getElementById('trackBtn').addEventListener('click', async () => {
             const phone = document.getElementById('trackPhone').value.trim();
             if (!phone) { showToast('❌ Enter your phone number'); return; }
 
-            // Clean up previous listener
             if (ordersUnsubscribe) {
                 ordersUnsubscribe();
                 ordersUnsubscribe = null;
             }
 
-            // Query orders from 'orders' collection by phone
             const q = query(collection(db, "orders"), where("phone", "==", phone));
             ordersUnsubscribe = onSnapshot(q, (snap) => {
                 const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -345,9 +317,10 @@
             }).join('');
         }
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TABS
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        document.getElementById('trackOrdersBtn').addEventListener('click', () => {
+            document.querySelector('.tab-buttons button[data-tab="track"]').click();
+        });
+
         document.querySelectorAll('.tab-buttons button').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
@@ -355,13 +328,6 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
             });
-        });
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  TRACK ORDERS BUTTON – open track tab
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        document.getElementById('trackOrdersBtn').addEventListener('click', () => {
-            document.querySelector('.tab-buttons button[data-tab="track"]').click();
         });
 
         console.log('✅ Client app with order tracking ready.');
