@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LIVRILY · COD Manager</title>
-    <!-- Leaflet + Routing Machine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -79,7 +78,6 @@
         .marker-label{font-weight:700;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.8);color:#fff;white-space:nowrap}
         .driver-list-btn{background:transparent;border:none;color:#38BDF8;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:6px}
         .driver-list-btn:hover{background:#334155}
-        /* Toast notification */
         #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #38BDF8;color:#F8FAFC;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:90%;text-align:center}
         #toast.show{display:block;animation:fadeIn .3s}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -176,9 +174,8 @@
                 </div>
             </div>
         </div>
-        <!-- MANAGER TABS (unchanged, we'll keep as before) -->
+        <!-- MANAGER TABS -->
         <div id="managerTabs" class="hidden">
-            <!-- same as before, but we'll add i18n later if needed, for now keep English -->
             <div id="tab-m-dashboard" class="tab active">
                 <div class="card"><h2>📊 Overview</h2><div class="summaryGrid">
                         <div class="summaryCard"><h3>Orders</h3><h1 id="dash-orders">0</h1></div>
@@ -267,6 +264,9 @@ import {
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
     collection, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {
+    getFunctions, httpsCallable
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
 const config = {
     apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
@@ -281,6 +281,7 @@ let app;
 try { app = getApps().length ? getApp() : initializeApp(config); } catch (_) { app = initializeApp(config); }
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MANAGER CONFIG – CHANGE EMAIL
@@ -337,6 +338,7 @@ const translations = {
         toast_new_order: "📦 New order assigned to you!",
         driver_offline: "⚫ Offline",
         driver_online: "🟢 Available",
+        no_orders: "No orders yet."
     },
     fr: {
         login_sub: "Paiement à la livraison · Hub chauffeur",
@@ -376,6 +378,7 @@ const translations = {
         toast_new_order: "📦 Nouvelle commande assignée !",
         driver_offline: "⚫ Hors ligne",
         driver_online: "🟢 Disponible",
+        no_orders: "Aucune commande pour l'instant."
     },
     ar: {
         login_sub: "الدفع عند الاستلام · مركز السائقين",
@@ -415,6 +418,7 @@ const translations = {
         toast_new_order: "📦 تم تعيين طلب جديد لك!",
         driver_offline: "⚫ غير متصل",
         driver_online: "🟢 متاح",
+        no_orders: "لا توجد طلبات بعد."
     }
 };
 
@@ -429,25 +433,20 @@ function updateUI() {
         const key = el.getAttribute('data-i18n');
         el.textContent = t(key);
     });
-    // Update dynamic elements that are not data-i18n
-    // We'll update status texts, button texts etc in render functions.
-    // Also update nav buttons if they have data-i18n
     document.querySelectorAll('#mainNav button').forEach(btn => {
         const key = btn.getAttribute('data-i18n');
         if (key) btn.textContent = t(key);
     });
 }
 
-// Language selector
 document.querySelectorAll('.lang-selector button').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.lang-selector button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentLang = btn.dataset.lang;
         updateUI();
-        // Re-render dynamic content if needed
         if (currentRole === 'driver') {
-            renderDriverOrders(); // re-render with new language
+            renderDriverOrders();
             renderDriverDashboard();
         } else if (currentRole === 'manager') {
             renderOrders();
@@ -471,7 +470,7 @@ let customerLatLng = null;
 let watchId = null, lastLocationSave = 0;
 let editingDriverId = null;
 let routingControl = null;
-let previousOrderIds = new Set(); // for notifications
+let previousOrderIds = new Set();
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  COLORS
@@ -627,7 +626,6 @@ function showTab(tabId) {
 //  TOAST NOTIFICATION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let toastTimeout;
-
 function showToast(msg, duration = 5000) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -638,7 +636,7 @@ function showToast(msg, duration = 5000) {
     }, duration);
 }
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  DRIVER LOGIC (with notification & map)
+//  DRIVER LOGIC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let driverOrders = [], driverSettlements = [];
 
@@ -652,7 +650,6 @@ function initDriver() {
         document.getElementById('avatar').innerText = name[0].toUpperCase();
     }).catch(console.error);
 
-    // Listen orders with notification detection
     let firstLoad = true;
     const unsub1 = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
         const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -670,12 +667,10 @@ function initDriver() {
             if (o.driver && o.driver.toLowerCase().includes(emailPrefix)) return true;
             return false;
         });
-        // Check for new order notification
         if (!firstLoad) {
             const newIds = new Set(newOrders.map(o => o.id));
             for (const id of newIds) {
                 if (!previousOrderIds.has(id)) {
-                    // new order!
                     const order = newOrders.find(o => o.id === id);
                     if (order) {
                         showToast(t('toast_new_order') + ' – ' + order.customer);
@@ -686,7 +681,6 @@ function initDriver() {
         }
         previousOrderIds = new Set(newOrders.map(o => o.id));
         firstLoad = false;
-
         driverOrders = newOrders;
         renderDriverDashboard();
         renderDriverOrders();
@@ -729,11 +723,11 @@ function initDriver() {
         if (window.currentLocation && driverMap) driverMap.setView([window.currentLocation.lat, window.currentLocation.lng], 15);
     });
     window.navigateTo = navigateToDriver;
+    window.openGoogleMaps = openGoogleMaps;
 }
 
 function renderDriverDashboard() {
     let totalOwed = driverOrders.reduce((a, b) => a + (b.yourIncome || 0), 0) - driverSettlements.reduce((a, b) => a + b.amount, 0);
-    // If negative, show 0 but keep note? We'll just show 0.
     if (totalOwed < 0) totalOwed = 0;
     const totalKept = driverOrders.reduce((a, b) => a + (b.driverKeeps || 0), 0);
     const totalCollected = driverOrders.reduce((a, b) => a + (b.clientTotal || 0), 0);
@@ -778,8 +772,7 @@ function renderDriverOrders() {
                 ` : '✅ Done'}
             </td>
         </tr>`;
-    }).join('') || `<tr><td colspan="7" style="color:#94A3B8;">${t('no_orders') || 'No orders yet.'}</td></tr>`;
-    // Expose update function
+    }).join('') || `<tr><td colspan="7" style="color:#94A3B8;">${t('no_orders')}</td></tr>`;
     window.updateOrderStatus = async function(orderId, status) {
         try {
             await updateDoc(doc(db, "orders", orderId), { status, updatedAt: serverTimestamp() });
@@ -869,9 +862,9 @@ function openGoogleMaps(orderId) {
     const origin = `${window.currentLocation.lat},${window.currentLocation.lng}`;
     const dest = `${o.customerLat},${o.customerLng}`;
     window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`, '_blank');
-}
+            }
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  MANAGER LOGIC (same as before, with minor i18n tweaks)
+//  MANAGER LOGIC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function initManager() {
     const unsub1 = onSnapshot(doc(db, "settings", "global"), (snap) => {
@@ -1154,7 +1147,6 @@ function renderOrders() {
             <td><button class="btn btn-danger" data-id="${o.id}">🗑</button></td>
         </tr>`;
     }).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No orders</td></tr>';
-    // Delete
     tbody.querySelectorAll('button[data-id]').forEach(btn => {
         btn.addEventListener('click', async () => {
             if (!confirm('Delete order?')) return;
@@ -1250,12 +1242,7 @@ function renderAccounting() {
         return true;
     });
     const tbody = document.getElementById('acc-body');
-    const statusMap = {
-        pending: '🛒',
-        picked: '🚚',
-        near: '📍',
-        delivered: '✅'
-    };
+    const statusMap = { pending: '🛒', picked: '🚚', near: '📍', delivered: '✅' };
     tbody.innerHTML = filtered.map(o => {
         const icon = statusMap[o.status] || '❓';
         return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${icon}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>`;
@@ -1273,8 +1260,9 @@ function updateMapMarkers() {
     Object.entries(locationsCache).forEach(([id, loc]) => {
         if (!loc.lat || !loc.lng) return;
         const driver = driversCache.find(d => d.id === id);
-        const name = driver?.name || id;
-        const color = driver?.color || getDriverColor(id);
+        if (!driver) return; // skip deleted drivers
+        const name = driver.name;
+        const color = driver.color || getDriverColor(id);
         const icon = L.divIcon({
             className: '',
             html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.6);"></div><div class="marker-label" style="color:#fff;text-shadow:0 0 6px #000;">${name}</div>`,
@@ -1312,8 +1300,9 @@ function updateMapDriversList() {
     Object.entries(locationsCache).forEach(([id, loc]) => {
         if (!loc.lat) return;
         const driver = driversCache.find(d => d.id === id);
-        const name = driver?.name || id;
-        const color = driver?.color || getDriverColor(id);
+        if (!driver) return;
+        const name = driver.name;
+        const color = driver.color || getDriverColor(id);
         html += `<div class="row" style="align-items:center;">
             <span style="display:flex;align-items:center;gap:8px;">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};"></span>
@@ -1351,7 +1340,7 @@ async function saveSettings() {
     } catch (e) { alert(e.message); }
 }
 
-// ─── DRIVER MANAGEMENT ───
+// ─── DRIVER MANAGEMENT with Cloud Function deletion ───
 function renderSettingsDrivers() {
     const grid = document.getElementById('settingsDriversGrid');
     grid.innerHTML = driversCache.map(d => {
@@ -1400,10 +1389,24 @@ function renderSettingsDrivers() {
         });
     });
 
+    // ★★★ UPDATED DELETE HANDLER – calls Cloud Function ★★★
     grid.querySelectorAll('button[data-del]').forEach(btn => {
         btn.addEventListener('click', async () => {
-            if (!confirm('Delete driver?')) return;
-            try { await deleteDoc(doc(db, "drivers", btn.dataset.del)); alert('✅ Deleted'); } catch (e) { alert(e.message); }
+            const id = btn.dataset.del;
+            if (!confirm('Delete this driver and their entire account (Auth + data)? This cannot be undone.')) return;
+            try {
+                const deleteDriver = httpsCallable(functions, 'deleteDriver');
+                await deleteDriver({ driverId: id });
+                alert('✅ Driver, location, and Auth account deleted. Email can be reused.');
+            } catch (e) {
+                // Fallback: if function not deployed, advise manual deletion
+                if (e.message.includes('UNIMPLEMENTED') || e.message.includes('not found')) {
+                    alert('❌ Cloud Function not deployed. Please delete the Auth user manually from Firebase Console, then delete driver again to remove Firestore docs.');
+                } else {
+                    alert('Error: ' + e.message);
+                }
+                console.error(e);
+            }
         });
     });
 }
@@ -1471,7 +1474,7 @@ loginPage.style.display = 'flex';
 appShell.style.display = 'none';
 document.getElementById('driverTabs').style.display = 'block';
 document.getElementById('managerTabs').classList.add('hidden');
-console.log('✅ LIVRILY upgraded with multi‑language, notifications, & Google Maps routing.');
+console.log('✅ LIVRILY upgraded: multi‑lang, notifications, Google Maps, full driver deletion (requires Cloud Function).');
 </script>
 </body>
 </html>
