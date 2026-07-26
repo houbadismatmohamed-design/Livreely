@@ -27,12 +27,31 @@
         #map{height:300px;border-radius:12px;margin-top:10px}
         .summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
         .summaryCard{background:#0F172A;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center}
+        /* Login overlay */
+        #loginOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999}
+        #loginOverlay .login-box{background:#1E293B;padding:30px;border-radius:16px;max-width:400px;width:90%;border:1px solid #334155}
+        #loginOverlay .login-box h2{color:#38BDF8;margin-bottom:10px}
+        #loginOverlay .login-box p{color:#94A3B8;font-size:13px;margin-bottom:16px}
+        #loginOverlay .login-box input{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#0F172A;color:#F8FAFC;margin-bottom:10px}
+        #loginOverlay .login-box .error{color:#F87171;font-size:12px;margin-top:8px;text-align:center}
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>🚗 Driver Login</h2>
+            <p>Enter your driver credentials</p>
+            <input id="loginEmail" placeholder="Email" />
+            <input id="loginPassword" type="password" placeholder="Password" />
+            <button id="loginBtn" class="btn btn-primary" style="width:100%;">Login</button>
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
+
     <header>
         <div class="logo">🚚 LIVRILY <span style="background:#38BDF8;color:#0F172A;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;">DRIVER</span></div>
-        <div><span id="userEmail" style="font-size:11px;color:#94A3B8;"></span> <button class="btn btn-danger" type="button" onclick="logout()">Logout</button></div>
+        <div><span id="userEmail" style="font-size:11px;color:#94A3B8;"></span> <button class="btn btn-danger" type="button" id="logoutBtn">Logout</button></div>
     </header>
     <nav>
         <button type="button" onclick="showTab('dashboard')" id="btn-dashboard" class="active">🛵 My Dashboard</button>
@@ -82,9 +101,10 @@
             <div class="card"><h2>🗺️ My Location + Customers</h2><div id="map"></div><div style="margin-top:10px;"><button class="btn btn-primary" type="button" onclick="centerMap()">📍 Center on Me</button></div></div>
         </div>
     </div>
+
     <script type="module">
         import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -104,41 +124,104 @@
         const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
         function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
 
-        let currentUser=null;
-        let ordersCache=[];
-        let settlementsCache=[];
-        let map, marker, watchId=null;
-        let currentLocation=null;
-        let customerMarkers={};
-        let lastLocationSave=0;
+        // DOM refs for login
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmailSpan = document.getElementById('userEmail');
 
-        window.onerror=function(msg){ console.error("JS Error:", msg); };
+        let currentUser = null;
+        let ordersCache = [];
+        let settlementsCache = [];
+        let map, marker, watchId = null;
+        let currentLocation = null;
+        let customerMarkers = {};
+        let lastLocationSave = 0;
 
-        onAuthStateChanged(auth, async (user)=>{
-            try{
-                if(!user){ location.href='Login.html'; return; }
-                if(isManager(user)){ location.href='Manager.html'; return; }
-                let snap=await getDoc(doc(db,"drivers",user.uid));
-                if(snap.exists() && snap.data().active===false){
-                    alert('Account deactivated');
+        // ─── Login logic ───
+        async function loginDriver(email, pass) {
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, pass);
+                const user = cred.user;
+                if (isManager(user)) {
                     await signOut(auth);
-                    location.href='Login.html';
-                    return;
+                    loginError.textContent = 'This account is a manager, not a driver.';
+                    return null;
                 }
-                currentUser=user;
-                document.getElementById('userEmail').innerText=user.email;
-                document.getElementById('driverEmail').innerText=user.email;
-                let name=snap.exists()? snap.data().name : user.email.split('@')[0];
-                document.getElementById('driverName').innerText=name;
-                document.getElementById('avatar').innerText=name[0].toUpperCase();
-                initMap();
-                initListeners();
-            }catch(e){ console.error(e); }
+                // Check if driver exists and is active
+                const snap = await getDoc(doc(db, "drivers", user.uid));
+                if (snap.exists() && snap.data().active === false) {
+                    await signOut(auth);
+                    loginError.textContent = 'Account deactivated.';
+                    return null;
+                }
+                loginOverlay.style.display = 'none';
+                return user;
+            } catch (e) {
+                loginError.textContent = e.message;
+                return null;
+            }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+            const email = loginEmail.value.trim();
+            const pass = loginPassword.value;
+            if (!email || !pass) { loginError.textContent = 'Enter email and password'; return; }
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging...';
+            await loginDriver(email, pass);
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
         });
 
-        window.logout=async()=>{ try{ await signOut(auth); }catch(e){} location.href='Login.html'; }
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            loginOverlay.style.display = 'flex';
+        });
 
-        window.showTab=(id)=>{
+        // ─── Auth state ───
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !isManager(user)) {
+                try {
+                    const snap = await getDoc(doc(db, "drivers", user.uid));
+                    if (snap.exists() && snap.data().active === false) {
+                        await signOut(auth);
+                        loginOverlay.style.display = 'flex';
+                        loginError.textContent = 'Account deactivated.';
+                        return;
+                    }
+                } catch (e) {
+                    await signOut(auth);
+                    loginOverlay.style.display = 'flex';
+                    loginError.textContent = 'Driver record missing.';
+                    return;
+                }
+                loginOverlay.style.display = 'none';
+                currentUser = user;
+                userEmailSpan.innerText = user.email;
+                document.getElementById('driverEmail').innerText = user.email;
+                let name = user.displayName || user.email.split('@')[0];
+                // Try to get driver name from Firestore
+                try {
+                    const snap = await getDoc(doc(db, "drivers", user.uid));
+                    if (snap.exists()) {
+                        name = snap.data().name || name;
+                    }
+                } catch(e) {}
+                document.getElementById('driverName').innerText = name;
+                document.getElementById('avatar').innerText = name[0].toUpperCase();
+                initMap();
+                initListeners();
+            } else {
+                loginOverlay.style.display = 'flex';
+            }
+        });
+
+        // ─── App functions ───
+        window.showTab = (id)=>{
             try{
                 document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
                 document.getElementById('tab-'+id).classList.add('active');
