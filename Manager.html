@@ -45,9 +45,28 @@
         .badge-red{background:#DC2626;color:#fff}
         #customerMap{height:220px;border-radius:12px;margin-top:10px;display:none}
         @media(max-width:600px){nav button{font-size:10px;padding:6px 10px}.summaryGrid{grid-template-columns:repeat(2,1fr)}}
+        /* Login overlay */
+        #loginOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999}
+        #loginOverlay .login-box{background:#1E293B;padding:30px;border-radius:16px;max-width:400px;width:90%;border:1px solid #334155}
+        #loginOverlay .login-box h2{color:#38BDF8;margin-bottom:10px}
+        #loginOverlay .login-box p{color:#94A3B8;font-size:13px;margin-bottom:16px}
+        #loginOverlay .login-box input{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#0F172A;color:#F8FAFC;margin-bottom:10px}
+        #loginOverlay .login-box .error{color:#F87171;font-size:12px;margin-top:8px;text-align:center}
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>👋 Manager Login</h2>
+            <p>Enter your manager credentials</p>
+            <input id="loginEmail" placeholder="Email" />
+            <input id="loginPassword" type="password" placeholder="Password" />
+            <button id="loginBtn" class="btn btn-primary" style="width:100%;">Login</button>
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
+
     <header>
         <div class="logo">🚚 LIVRILY <span style="font-size:9px;color:#22C55E;">MANAGER</span></div>
         <div class="user-info">
@@ -65,7 +84,7 @@
         <button data-tab="settings">⚙️ Settings</button>
     </nav>
     <div class="container">
-        <!-- Dashboard -->
+        <!-- Same dashboard content as before -->
         <div id="tab-dashboard" class="tab active">
             <div class="card"><h2>📊 Overview</h2><div class="summaryGrid">
                     <div class="summaryCard"><h3>Orders</h3><h1 id="dash-orders">0</h1></div>
@@ -77,7 +96,6 @@
             <div class="card"><h2>📋 Recent Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Your Income</th></tr></thead><tbody id="dash-recent"></tbody></table></div></div>
         </div>
 
-        <!-- New Order -->
         <div id="tab-new-order" class="tab">
             <div class="card"><h2>👤 Customer</h2>
                 <label>Name</label><input id="cName" placeholder="Customer name" />
@@ -105,31 +123,26 @@
             <button class="btn btn-success" style="width:100%;padding:12px;" id="saveOrderBtn">💾 SAVE ORDER</button>
         </div>
 
-        <!-- Orders -->
         <div id="tab-orders" class="tab">
             <div class="card"><input id="ordersSearch" placeholder="Search orders..." /></div>
             <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Qty</th><th>Your Income</th><th>Date</th><th>Del</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
         </div>
 
-        <!-- Map -->
         <div id="tab-map" class="tab">
             <div class="card"><h2>🗺️ Live Map</h2><div id="map"></div><div id="mapDriversList" style="margin-top:10px;"></div></div>
         </div>
 
-        <!-- Settlement -->
         <div id="tab-settlement" class="tab">
             <div class="card"><div class="summaryGrid"><div class="summaryCard"><b id="set-toCollect" style="color:#F59E0B;">0 DA</b><br>To Collect</div><div class="summaryCard"><b id="set-collected">0 DA</b><br>Collected</div><div class="summaryCard"><b id="set-orders">0</b><br>Orders</div></div></div>
             <div id="settlementGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;"></div>
             <div class="card"><h2>📜 Settlement History</h2><div id="settlementHistory"></div></div>
         </div>
 
-        <!-- Accounting -->
         <div id="tab-accounting" class="tab">
             <div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input type="date" id="acc-date" /><input type="text" id="acc-search" placeholder="Search..." /></div></div>
             <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Your Income</th><th>Date</th></tr></thead><tbody id="acc-body"></tbody></table></div></div>
         </div>
 
-        <!-- Settings -->
         <div id="tab-settings" class="tab">
             <div class="card"><h2>💰 Fee Settings</h2>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
@@ -176,7 +189,7 @@
 
     <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const config = {
@@ -197,6 +210,66 @@
         const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
         function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
 
+        // ─── DOM refs ───
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmailSpan = document.getElementById('userEmail');
+
+        // ─── Login logic ───
+        async function loginManager(email, pass) {
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, pass);
+                const user = cred.user;
+                if (!isManager(user)) {
+                    await signOut(auth);
+                    loginError.textContent = 'This account is not a manager.';
+                    return null;
+                }
+                loginOverlay.style.display = 'none';
+                return user;
+            } catch (e) {
+                loginError.textContent = e.message;
+                return null;
+            }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+            const email = loginEmail.value.trim();
+            const pass = loginPassword.value;
+            if (!email || !pass) { loginError.textContent = 'Enter email and password'; return; }
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging...';
+            await loginManager(email, pass);
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            loginOverlay.style.display = 'flex';
+        });
+
+        // ─── Auth state ───
+        onAuthStateChanged(auth, async (user) => {
+            if (user && isManager(user)) {
+                loginOverlay.style.display = 'none';
+                userEmailSpan.innerText = user.email;
+                initAll();
+            } else if (user) {
+                // Not manager, sign out
+                await signOut(auth);
+                loginOverlay.style.display = 'flex';
+                loginError.textContent = 'Not a manager account.';
+            } else {
+                loginOverlay.style.display = 'flex';
+            }
+        });
+
+        // ─── App logic (same as before) ───
         let settings = {
             clientFeePerProduct: 10,
             driverAppFee: 10,
@@ -209,18 +282,6 @@
         let editingDriverId = null;
         let map = null, customerMap = null, customerLatLng = null, customerMarker = null;
         let unsubscribers = [];
-
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) { location.href = 'Login.html'; return; }
-            if (!isManager(user)) { location.href = 'Driver.html'; return; }
-            document.getElementById('userEmail').innerText = user.email;
-            initAll();
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await signOut(auth);
-            location.href = 'Login.html';
-        });
 
         function initAll() {
             unsubscribers.forEach(unsub => { try { unsub(); } catch(e) {} });
@@ -796,7 +857,7 @@
             document.getElementById('drv-password').value = '';
         }
 
-        console.log('✅ Manager app with percentage/fixed fee toggle ready.');
+        console.log('✅ Manager app with login overlay and fee toggle ready.');
     </script>
 </body>
 </html>
