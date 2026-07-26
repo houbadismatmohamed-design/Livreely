@@ -19,6 +19,7 @@
         .btn-success{background:#16A34A;color:#fff}.btn-success:hover{background:#15803D}
         .btn-danger{background:#DC2626;color:#fff}.btn-danger:hover{background:#B91C1C}
         .btn-warning{background:#F59E0B;color:#0F172A}.btn-warning:hover{background:#D97706}
+        .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}.btn-outline:hover{background:#334155}
         .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
         .product-card{background:#0F172A;border-radius:12px;padding:12px;border:1px solid #334155;text-align:center}
         .product-card .price{color:#F59E0B;font-size:18px;font-weight:700}
@@ -51,7 +52,7 @@
             <div id="productsGrid" class="product-grid"></div>
         </div>
 
-        <!-- Cart Modal (simple inline) -->
+        <!-- Cart -->
         <div id="cartSection" class="card hidden">
             <h2>🛒 Your Cart</h2>
             <div id="cartItems"></div>
@@ -81,7 +82,7 @@
         //  FIREBASE IMPORTS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, addDoc, deleteDoc, updateDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const config = {
             apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
@@ -100,7 +101,7 @@
         //  STATE
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let products = [];
-        let cart = []; // array of { productId, name, price, qty }
+        let cart = [];
 
         // DOM refs
         const productsGrid = document.getElementById('productsGrid');
@@ -115,7 +116,6 @@
         //  TOAST
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let toastTimer;
-
         function showToast(msg) {
             toast.textContent = msg;
             toast.classList.add('show');
@@ -129,6 +129,7 @@
         onSnapshot(collection(db, "products"), (snap) => {
             products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderProducts();
+            console.log('Products loaded:', products);
         });
 
         function renderProducts() {
@@ -142,7 +143,6 @@
             `).join('');
         }
 
-        // Expose addToCart globally for onclick
         window.addToCart = function(id, name, price, stock) {
             if (stock <= 0) { showToast('❌ Out of stock'); return; }
             const existing = cart.find(item => item.productId === id);
@@ -161,7 +161,6 @@
             const count = cart.reduce((sum, i) => sum + i.qty, 0);
             cartCount.textContent = count;
             cartTotal.textContent = total + ' DA';
-            // Render cart items
             cartItems.innerHTML = cart.map((item, idx) => `
                 <div class="cart-item">
                     <span>${item.name} x${item.qty}</span>
@@ -170,7 +169,6 @@
                     </span>
                 </div>
             `).join('');
-            // Show/hide cart section? We keep it always visible but initially hidden; we'll toggle.
         }
 
         window.removeFromCart = function(idx) {
@@ -209,21 +207,18 @@
             if (!name || !phone || !address) { showToast('❌ Fill all fields'); return; }
             if (cart.length === 0) { showToast('❌ Cart empty'); return; }
 
-            // Calculate total
-            const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-
-            // We need to find which shop owns these products (assume all products belong to one shop? We'll support multiple shops by grouping)
-            // For simplicity, we'll create one order per shop. But we can group by shopId.
-            // We'll get product IDs to check shop.
-            const productIds = cart.map(i => i.productId);
-            // Query products to get shopId (could optimize by storing shopId in product doc)
-            // We'll just loop and create separate orders per shop? Better: we'll assume all products belong to a single shop (first product's shop).
-            // For multi-shop, we'd need to split cart by shopId. For demo, we'll just take first product's shop.
+            // Get shopId from first product
             const firstProduct = products.find(p => p.id === cart[0].productId);
             if (!firstProduct) { showToast('❌ Product not found'); return; }
-            const shopId = firstProduct.shopId || 'defaultShop';
+            const shopId = firstProduct.shopId;
+            if (!shopId) {
+                showToast('❌ This product is missing shop information. Contact the shop.');
+                console.error('Product missing shopId:', firstProduct);
+                return;
+            }
 
-            // Create order document
+            const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
             try {
                 await addDoc(collection(db, "shopOrders"), {
                     shopId: shopId,
@@ -232,9 +227,10 @@
                     address: address,
                     items: cart.map(i => ({ productId: i.productId, name: i.name, qty: i.qty, price: i.price })),
                     total: total,
-                    status: 'pending', // pending shop acceptance
+                    status: 'pending',
                     createdAt: serverTimestamp()
                 });
+                console.log('Order placed with shopId:', shopId);
                 showToast('✅ Order placed! Shop owner will confirm.');
                 // Clear cart and form
                 cart = [];
@@ -244,7 +240,6 @@
                 document.getElementById('clientAddress').value = '';
                 checkoutForm.classList.add('hidden');
                 cartSection.classList.add('hidden');
-                // Also update product stock? We'll reduce stock when shop accepts.
             } catch (e) {
                 showToast('❌ Error: ' + e.message);
                 console.error(e);
