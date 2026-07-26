@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LIVRILY · COD Manager</title>
-    <!-- Leaflet CSS + JS -->
+    <!-- Leaflet + Routing Machine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif}
         body{background:#0F172A;color:#F8FAFC;min-height:100vh}
@@ -43,6 +45,7 @@
         .btn-warning:hover{background:#D97706}
         .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}
         .btn-outline:hover{background:#334155}
+        .btn-lg{padding:12px 20px;font-size:15px}
         nav{display:flex;gap:6px;flex-wrap:wrap;background:#1E293B;padding:10px 16px;position:sticky;top:60px;z-index:999;border-bottom:1px solid #334155}
         nav button{color:#CBD5E1;background:transparent;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:500;transition:.15s;cursor:pointer}
         nav button:hover{background:#334155;color:#fff}
@@ -70,12 +73,19 @@
         .badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
         .badge-green{background:#16A34A;color:#fff}
         .badge-red{background:#DC2626;color:#fff}
+        .status-badge{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:600}
+        .status-pending{background:#F59E0B;color:#0F172A}
+        .status-picked{background:#3B82F6;color:#fff}
+        .status-near{background:#8B5CF6;color:#fff}
+        .status-delivered{background:#22C55E;color:#0F172A}
+        .marker-label{font-weight:700;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.8);color:#fff;white-space:nowrap}
+        .driver-list-btn{background:transparent;border:none;color:#38BDF8;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:6px}
+        .driver-list-btn:hover{background:#334155}
         @media(max-width:600px){nav button{font-size:10px;padding:6px 10px}.summaryGrid{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
-
-<!-- LOGIN PAGE -->
+<!-- LOGIN -->
 <div id="loginPage">
     <div class="login-box">
         <div class="avatar">L</div>
@@ -85,10 +95,9 @@
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
         <button class="btn-login" id="loginBtn">LOGIN</button>
         <p id="error"></p>
-        <p class="footnote">Manager + Driver access · <strong style="color:#38BDF8;">COD</strong> · All fees free</p>
+        <p class="footnote">Manager + Driver · <strong style="color:#38BDF8;">COD</strong> · Fees free</p>
     </div>
 </div>
-
 <!-- APP SHELL -->
 <div id="appShell">
     <header>
@@ -139,10 +148,10 @@
             </div>
             <div id="tab-orders" class="tab">
                 <div class="card">
-                    <h2>📋 My Orders – Pickup & Delivery</h2>
+                    <h2>📋 My Orders – Update Status</h2>
                     <div style="overflow-x:auto;">
                         <table>
-                            <thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Qty</th><th>Address</th><th>Client Total</th><th>You Owe</th><th>You Keep</th><th>Nav</th></tr></thead>
+                            <thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Qty</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
                             <tbody id="ordersBody"></tbody>
                         </table>
                     </div>
@@ -166,7 +175,7 @@
                         <div class="summaryCard"><h3>Active Drivers</h3><h1 id="dash-active">0</h1></div>
                 </div></div>
                 <div class="card"><h2>🚗 Drivers Balances</h2><div id="dash-drivers"></div></div>
-                <div class="card"><h2>📋 Recent Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Your Income</th></tr></thead><tbody id="dash-recent"></tbody></table></div></div>
+                <div class="card"><h2>📋 Recent Orders</h2><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Status</th><th>Your Income</th></tr></thead><tbody id="dash-recent"></tbody></table></div></div>
             </div>
             <div id="tab-m-new-order" class="tab">
                 <div class="card"><h2>👤 Customer</h2>
@@ -189,14 +198,14 @@
                     <div class="row"><span>Client Fee</span><b id="b-clientFee">0 DA</b></div>
                     <div class="row"><span>Client Total</span><b id="b-clientTotal">0 DA</b></div>
                     <div class="row"><span>Manager 40%</span><b id="b-manager">0 DA</b></div>
-                    <div class="row"><span>Driver Owes / Your Income</span><b id="b-owes" style="color:#F59E0B;">0 DA</b></div>
+                    <div class="row"><span>Driver Owes</span><b id="b-owes" style="color:#F59E0B;">0 DA</b></div>
                     <div class="row"><span>Driver Keeps</span><b id="b-keeps" style="color:#22C55E;">0 DA</b></div>
                 </div>
                 <button class="btn btn-success" style="width:100%;padding:12px;" id="saveOrderBtn">💾 SAVE ORDER</button>
             </div>
             <div id="tab-m-orders" class="tab">
                 <div class="card"><input id="ordersSearch" placeholder="Search orders..." /></div>
-                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Driver</th><th>Qty</th><th>Your Income</th><th>Date</th><th>Del</th></tr></thead><tbody id="mOrdersBody"></tbody></table></div></div>
+                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Status</th><th>Reassign</th><th>Del</th></tr></thead><tbody id="mOrdersBody"></tbody></table></div></div>
             </div>
             <div id="tab-m-map" class="tab">
                 <div class="card"><h2>🗺️ Live Map</h2><div id="mMap"></div><div id="mapDriversList" style="margin-top:10px;"></div></div>
@@ -208,7 +217,7 @@
             </div>
             <div id="tab-m-accounting" class="tab">
                 <div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input type="date" id="acc-date" /><input type="text" id="acc-search" placeholder="Search..." /></div></div>
-                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Your Income</th><th>Date</th></tr></thead><tbody id="acc-body"></tbody></table></div></div>
+                <div class="card"><div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Customer</th><th>Driver</th><th>Status</th><th>Income</th><th>Date</th></tr></thead><tbody id="acc-body"></tbody></table></div></div>
             </div>
             <div id="tab-m-settings" class="tab">
                 <div class="card"><h2>💰 Fee Settings</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;"><div><label>Client Fee / product (DA)</label><input type="number" id="set-clientFee" value="10" min="0" /></div><div><label>Driver App Fee (DA)</label><input type="number" id="set-driverApp" value="10" min="0" /></div><div><label>Manager %</label><input type="number" id="set-managerPct" value="40" min="0" max="100" /></div><div><label>Default Delivery (DA)</label><input type="number" id="set-defaultDelivery" value="300" min="0" /></div></div><div style="margin-top:10px;padding:10px;background:#0F172A;border-radius:8px;font-size:11px;" id="set-example"></div><button class="btn btn-primary" style="width:100%;margin-top:10px;" id="saveSettingsBtn">💾 Save Settings</button></div>
@@ -235,31 +244,16 @@
 
 <script type="module">
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  FIREBASE IMPORTS
+//  FIREBASE IMPORTS & CONFIG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
-    getAuth,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    createUserWithEmailAndPassword,
-    setPersistence,
-    inMemoryPersistence
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    createUserWithEmailAndPassword, setPersistence, inMemoryPersistence
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    updateDoc,
-    deleteDoc,
-    addDoc,
-    collection,
-    onSnapshot,
-    query,
-    orderBy,
-    serverTimestamp
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
+    collection, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const config = {
@@ -277,9 +271,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  CONFIG – CHANGE MANAGER EMAIL HERE
+//  MANAGER CONFIG – CHANGE EMAIL HERE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"]; // ← put your manager email here
+const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"]; // ← YOUR MANAGER EMAIL
 const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
 
 function isManager(user) {
@@ -292,27 +286,32 @@ function isManager(user) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GLOBAL STATE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-let currentUser = null;
-let currentRole = null;
+let currentUser = null, currentRole = null;
 let unsubscribers = [];
 let settings = { clientFeePerProduct: 10, driverAppFee: 10, managerFeePercent: 40, defaultDeliveryPrice: 300 };
-let driversCache = [];
-let ordersCache = [];
-let settlementsCache = [];
-let locationsCache = {};
-
-// Map instances
-let driverMap = null,
-    managerMap = null,
-    customerMap = null;
-let driverMarker = null,
-    customerMarker = null;
+let driversCache = [], ordersCache = [], settlementsCache = [], locationsCache = {};
+let driverMap = null, managerMap = null, customerMap = null;
+let driverMarker = null, customerMarker = null;
 let customerLatLng = null;
-let watchId = null;
-let lastLocationSave = 0;
-
-// Editing driver
+let watchId = null, lastLocationSave = 0;
 let editingDriverId = null;
+let routingControl = null; // for route
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  COLOR PALETTE FOR DRIVERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const DRIVER_COLORS = [
+    '#E74C3C','#3498DB','#2ECC71','#F1C40F','#9B59B6','#1ABC9C',
+    '#E67E22','#2980B9','#27AE60','#F39C12','#8E44AD','#16A085',
+    '#D35400','#2C3E50','#C0392B','#2471A3','#229954','#F5B041','#6C3483','#1F618D'
+];
+
+function getDriverColor(driverId) {
+    // deterministic based on uid
+    let idx = 0;
+    for (let i=0; i<driverId.length; i++) idx += driverId.charCodeAt(i);
+    return DRIVER_COLORS[idx % DRIVER_COLORS.length];
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  DOM REFS
@@ -343,18 +342,15 @@ async function doLogin() {
         const cred = await signInWithEmailAndPassword(auth, email, pass);
         const user = cred.user;
         if (!isManager(user)) {
-            try {
-                const snap = await getDoc(doc(db, "drivers", user.uid));
-                if (snap.exists() && snap.data().active === false) {
-                    errorEl.innerText = 'Account deactivated.';
-                    await signOut(auth);
-                    loginBtn.disabled = false;
-                    loginBtn.innerText = 'LOGIN';
-                    return;
-                }
-            } catch (_) {}
+            const snap = await getDoc(doc(db, "drivers", user.uid));
+            if (snap.exists() && snap.data().active === false) {
+                errorEl.innerText = 'Account deactivated.';
+                await signOut(auth);
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'LOGIN';
+                return;
+            }
         }
-        // onAuthStateChanged will handle routing
     } catch (e) {
         let msg = e.message.replace(/Firebase: /i, '').replace(/\(.*\)/, '').trim();
         if (msg.includes('user-not-found')) msg = 'No account with this email.';
@@ -369,41 +365,26 @@ async function doLogin() {
 
 loginBtn.addEventListener('click', doLogin);
 passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-logoutBtn.addEventListener('click', async () => {
-    try { await signOut(auth); } catch (_) {}
-    window.location.reload();
-});
+logoutBtn.addEventListener('click', async () => { try { await signOut(auth); } catch (_) {} window.location.reload(); });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  ROUTING ON AUTH STATE CHANGE
+//  ROUTING
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 onAuthStateChanged(auth, async (user) => {
     unsubscribers.forEach(fn => { try { fn(); } catch (_) {} });
     unsubscribers = [];
-
-    if (!user) {
-        loginPage.style.display = 'flex';
-        appShell.style.display = 'none';
-        return;
-    }
-
+    if (!user) { loginPage.style.display = 'flex'; appShell.style.display = 'none'; return; }
     if (!isManager(user)) {
-        try {
-            const snap = await getDoc(doc(db, "drivers", user.uid));
-            if (snap.exists() && snap.data().active === false) {
-                await signOut(auth);
-                loginPage.style.display = 'flex';
-                appShell.style.display = 'none';
-                errorEl.innerText = 'Account deactivated.';
-                return;
-            }
-        } catch (_) {}
+        const snap = await getDoc(doc(db, "drivers", user.uid));
+        if (snap.exists() && snap.data().active === false) {
+            await signOut(auth);
+            loginPage.style.display = 'flex'; appShell.style.display = 'none';
+            errorEl.innerText = 'Account deactivated.';
+            return;
+        }
     }
-
     currentUser = user;
     userEmailSpan.innerText = user.email || user.uid;
-
     if (isManager(user)) {
         currentRole = 'manager';
         roleBadge.innerText = 'MANAGER';
@@ -413,10 +394,8 @@ onAuthStateChanged(auth, async (user) => {
         roleBadge.innerText = 'DRIVER';
         showDriverUI();
     }
-
     loginPage.style.display = 'none';
     appShell.style.display = 'block';
-
     if (currentRole === 'driver') initDriver();
     else initManager();
 });
@@ -454,10 +433,7 @@ function showManagerUI() {
 
 function attachNavEvents() {
     document.querySelectorAll('#mainNav button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            showTab(tab);
-        });
+        btn.addEventListener('click', () => { showTab(btn.dataset.tab); });
     });
 }
 
@@ -474,8 +450,7 @@ function showTab(tabId) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  DRIVER LOGIC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-let driverOrders = [];
-let driverSettlements = [];
+let driverOrders = [], driverSettlements = [];
 
 function initDriver() {
     const uid = currentUser.uid;
@@ -493,7 +468,6 @@ function initDriver() {
         const myEmail = currentUser.email.toLowerCase();
         const myUid = currentUser.uid;
         const emailPrefix = myEmail.split('@')[0].toLowerCase();
-
         driverOrders = all.filter(o => {
             if (o.driverId === myUid) return true;
             if (o.driverEmail && o.driverEmail.toLowerCase() === myEmail) return true;
@@ -514,10 +488,8 @@ function initDriver() {
         const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         const myName = document.getElementById('driverName')?.innerText || '';
         driverSettlements = all.filter(s =>
-            s.driverId === currentUser.uid ||
-            s.driverEmail === currentUser.email ||
-            s.driverName === myName ||
-            s.driver === myName
+            s.driverId === currentUser.uid || s.driverEmail === currentUser.email ||
+            s.driverName === myName || s.driver === myName
         );
         renderDriverDashboard();
     });
@@ -525,18 +497,13 @@ function initDriver() {
 
     if (!driverMap) {
         driverMap = L.map('map').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(driverMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, CartoDB' }).addTo(driverMap);
     }
 
     document.getElementById('toggleStatusBtn').addEventListener('click', () => {
         const el = document.getElementById('status');
-        if (el.innerText.includes('Available')) {
-            el.innerText = '⚫ Offline';
-            el.style.background = '#64748B';
-        } else {
-            el.innerText = '🟢 Available';
-            el.style.background = '#16A34A';
-        }
+        if (el.innerText.includes('Available')) { el.innerText = '⚫ Offline'; el.style.background = '#64748B'; }
+        else { el.innerText = '🟢 Available'; el.style.background = '#16A34A'; }
     });
 
     document.getElementById('startGpsBtn').addEventListener('click', startGps);
@@ -544,16 +511,7 @@ function initDriver() {
     document.getElementById('centerMapBtn').addEventListener('click', () => {
         if (window.currentLocation && driverMap) driverMap.setView([window.currentLocation.lat, window.currentLocation.lng], 15);
     });
-
-    window.navigateTo = function(orderId) {
-        const o = driverOrders.find(x => x.id === orderId);
-        if (!o) return;
-        if (o.customerLat && o.customerLng) {
-            window.open(`https://www.openstreetmap.org/?mlat=${o.customerLat}&mlon=${o.customerLng}#map=16/${o.customerLat}/${o.customerLng}`, '_blank');
-        } else if (o.address) {
-            window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(o.address)}`, '_blank');
-        }
-    };
+    window.navigateTo = navigateToDriver;
 }
 
 function renderDriverDashboard() {
@@ -575,31 +533,59 @@ function renderDriverOrders() {
     const tbody = document.getElementById('ordersBody');
     if (!tbody) return;
     tbody.innerHTML = driverOrders.map(o => {
-        const prodText = (o.products || []).map(p => `${p.name} x${p.qty}`).join(', ') || `${o.qty||0} products`;
+        const status = o.status || 'pending';
+        const statusClass = status === 'pending' ? 'status-pending' : status === 'picked' ? 'status-picked' : status === 'near' ? 'status-near' : 'status-delivered';
+        const statusLabel = status === 'pending' ? '🛒 In Shop' : status === 'picked' ? '🚚 With Driver' : status === 'near' ? '📍 Near Client' : '✅ Delivered';
+        const canUpdate = status !== 'delivered';
         return `<tr>
             <td>${o.id?.slice(0,5)||''}</td>
             <td>${o.customer||''}<br><small>${o.phone||''}</small></td>
-            <td style="max-width:120px;white-space:pre-wrap;"><b>${prodText}</b></td>
+            <td style="max-width:100px;white-space:pre-wrap;">${(o.products||[]).map(p=>p.name).join(', ')}</td>
             <td>${o.qty||0}</td>
-            <td style="max-width:120px;white-space:pre-wrap;">${o.address||''}<br><small>${o.shop||''}</small></td>
-            <td>${o.clientTotal||0} DA</td>
-            <td style="color:#F59E0B;"><b>${o.yourIncome||0} DA</b></td>
-            <td style="color:#22C55E;">${o.driverKeeps||0} DA</td>
-            <td><button class="btn btn-primary" onclick="navigateTo('${o.id}')">🧭</button><br><small>${o.status||''}</small></td>
+            <td style="max-width:100px;white-space:pre-wrap;">${o.address||''}<br><small>${o.shop||''}</small></td>
+            <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+            <td>
+                ${canUpdate ? `
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
+                        <button class="btn btn-warning btn-lg" onclick="updateOrderStatus('${o.id}','picked')">📦 Picked Up</button>
+                        <button class="btn btn-primary btn-lg" onclick="updateOrderStatus('${o.id}','near')">📍 Near Client</button>
+                        <button class="btn btn-success btn-lg" onclick="updateOrderStatus('${o.id}','delivered')">✅ Delivered</button>
+                    </div>
+                ` : '✅ Done'}
+            </td>
         </tr>`;
-    }).join('') || '<tr><td colspan="9" style="color:#94A3B8;">No orders yet.</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="color:#94A3B8;">No orders yet.</td></tr>';
+    // Expose update function globally
+    window.updateOrderStatus = async function(orderId, status) {
+        try {
+            await updateDoc(doc(db, "orders", orderId), { status, updatedAt: serverTimestamp() });
+            if (status === 'delivered') {
+                // remove from map
+                const order = driverOrders.find(o => o.id === orderId);
+                if (order && order.customerLat && order.customerLng) {
+                    // will be removed on next snapshot
+                }
+            }
+        } catch (e) { alert(e.message); }
+    };
 }
 
 function updateDriverMapCustomers() {
     if (!driverMap) return;
+    // Remove old customer markers (keep driver marker)
     for (const key in window.customerMarkers) {
         try { driverMap.removeLayer(window.customerMarkers[key]); } catch (_) {}
     }
     window.customerMarkers = {};
+    // Also remove routing if any
+    if (routingControl) {
+        driverMap.removeControl(routingControl);
+        routingControl = null;
+    }
     driverOrders.forEach(o => {
-        if (o.customerLat && o.customerLng) {
+        if (o.customerLat && o.customerLng && o.status !== 'delivered') {
             const m = L.marker([o.customerLat, o.customerLng]).addTo(driverMap)
-                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}`);
+                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}<br><button class="btn btn-primary btn-sm" onclick="navigateTo('${o.id}')">🧭 Navigate</button>`);
             window.customerMarkers[o.id] = m;
         }
     });
@@ -612,8 +598,7 @@ async function startGps() {
         const now = Date.now();
         if (now - lastLocationSave < 10000) return;
         lastLocationSave = now;
-        const lat = pos.coords.latitude,
-            lng = pos.coords.longitude;
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
         window.currentLocation = { lat, lng };
         if (driverMap) {
             if (!driverMarker) {
@@ -623,9 +608,7 @@ async function startGps() {
             }
         }
         await setDoc(doc(db, "locations", currentUser.uid), {
-            lat,
-            lng,
-            updatedAt: serverTimestamp(),
+            lat, lng, updatedAt: serverTimestamp(),
             driverId: currentUser.uid,
             driverName: document.getElementById('driverName').innerText
         }, { merge: true });
@@ -639,7 +622,25 @@ function stopGps() {
     if (watchId) navigator.geolocation.clearWatch(watchId);
     watchId = null;
     document.getElementById('gpsStatus').innerText = '⏹ GPS stopped';
+}
+
+function navigateToDriver(orderId) {
+    const o = driverOrders.find(x => x.id === orderId);
+    if (!o || !o.customerLat || !o.customerLng) return;
+    if (!window.currentLocation) {
+        alert('Please enable GPS first.');
+        return;
     }
+    const start = [window.currentLocation.lat, window.currentLocation.lng];
+    const end = [o.customerLat, o.customerLng];
+    if (routingControl) driverMap.removeControl(routingControl);
+    routingControl = L.Routing.control({
+        waypoints: [L.latLng(start), L.latLng(end)],
+        routeWhileDragging: true,
+        showAlternatives: false,
+        lineOptions: { styles: [{ color: '#2563EB', weight: 5 }] }
+    }).addTo(driverMap);
+}
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  MANAGER LOGIC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -659,6 +660,7 @@ function initManager() {
         renderSettlement();
         renderSettingsDrivers();
         updateMapDriversList();
+        updateMapMarkers();
     });
     unsubscribers.push(unsub2);
 
@@ -669,6 +671,7 @@ function initManager() {
         renderSettlement();
         updateMapMarkers();
         renderAccounting();
+        updateMapDriversList();
     });
     unsubscribers.push(unsub3);
 
@@ -689,7 +692,7 @@ function initManager() {
 
     if (!managerMap) {
         managerMap = L.map('mMap').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(managerMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, CartoDB' }).addTo(managerMap);
     }
 
     document.getElementById('localizeBtn').addEventListener('click', localizeCustomer);
@@ -705,6 +708,7 @@ function initManager() {
     document.querySelectorAll('.pQty').forEach(i => i.addEventListener('input', calc));
     document.getElementById('deliveryPrice').addEventListener('input', calc);
     window.calc = calc;
+    window.reassignOrder = reassignOrder;
 }
 
 function updateSettingsUI() {
@@ -715,15 +719,10 @@ function updateSettingsUI() {
     document.getElementById('feeLabel').innerText = (settings.clientFeePerProduct || 10) + ' DA';
     document.getElementById('deliveryPrice').value = settings.defaultDeliveryPrice || 300;
     const ex = document.getElementById('set-example');
-    const cf = settings.clientFeePerProduct || 10,
-        da = settings.driverAppFee || 10,
-        mp = settings.managerFeePercent || 40,
-        del = settings.defaultDeliveryPrice || 300;
-    const qty = 2,
-        cFee = qty * cf,
-        mFee = Math.round(del * mp / 100),
-        owes = cFee + da + mFee,
-        keeps = del - mFee - da;
+    const cf = settings.clientFeePerProduct || 10, da = settings.driverAppFee || 10,
+        mp = settings.managerFeePercent || 40, del = settings.defaultDeliveryPrice || 300;
+    const qty = 2, cFee = qty * cf, mFee = Math.round(del * mp / 100),
+        owes = cFee + da + mFee, keeps = del - mFee - da;
     ex.innerHTML =
         `Example ${qty} products, Delivery ${del} DA:<br>Client Fee ${qty}x${cf}=${cFee} DA, Client Total ${del+cFee} DA, Manager ${mFee} DA, Driver Owes ${owes} DA, Keeps ${keeps} DA`;
 }
@@ -751,8 +750,7 @@ function addProductRow() {
     const tr = document.createElement('tr');
     tr.innerHTML =
         `<td><input class="pName" placeholder="Product" /></td><td><input type="number" class="pQty" value="1" min="1" /></td><td><button class="btn btn-danger" type="button">❌</button></td>`;
-    tr.querySelector('button').addEventListener('click', () => { tr.remove();
-        calc(); });
+    tr.querySelector('button').addEventListener('click', () => { tr.remove(); calc(); });
     tr.querySelector('.pQty').addEventListener('input', calc);
     tbody.appendChild(tr);
     calc();
@@ -765,16 +763,14 @@ async function localizeCustomer() {
     mapEl.style.display = 'block';
     if (!customerMap) {
         customerMap = L.map('customerMap').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(customerMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM, CartoDB' }).addTo(customerMap);
     }
     document.getElementById('customerCoords').innerText = '🔍 Searching...';
     try {
-        const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
         const data = await res.json();
         if (!data || !data.length) { document.getElementById('customerCoords').innerText = '❌ Not found'; return; }
-        const lat = parseFloat(data[0].lat),
-            lng = parseFloat(data[0].lon);
+        const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
         customerLatLng = { lat, lng, display: data[0].display_name };
         customerMap.setView([lat, lng], 15);
         if (customerMarker) customerMap.removeLayer(customerMarker);
@@ -789,8 +785,7 @@ async function localizeCustomer() {
 
 async function saveOrder() {
     try {
-        let qty = 0,
-            products = [];
+        let qty = 0, products = [];
         document.querySelectorAll('#prodBody tr').forEach(tr => {
             const name = tr.querySelector('.pName')?.value || 'Product';
             const q = parseInt(tr.querySelector('.pQty')?.value) || 1;
@@ -816,24 +811,15 @@ async function saveOrder() {
             customerLat: customerLatLng?.lat || null,
             customerLng: customerLatLng?.lng || null,
             shop: document.getElementById('cShop').value || '',
-            products,
-            qty,
-            deliveryPrice: delivery,
-            clientFee,
-            clientTotal,
-            managerFee,
-            driverAppFee: driverApp,
-            managerPercent: settings.managerFeePercent,
+            products, qty, deliveryPrice: delivery, clientFee, clientTotal,
+            managerFee, driverAppFee: driverApp, managerPercent: settings.managerFeePercent,
             clientFeePerProduct: settings.clientFeePerProduct,
-            yourIncome: owes,
-            driverKeeps: keeps,
-            driver: driverDoc?.name || driverId,
-            driverId: driverId,
-            driverEmail: driverDoc?.email || '',
+            yourIncome: owes, driverKeeps: keeps,
+            driver: driverDoc?.name || driverId, driverId, driverEmail: driverDoc?.email || '',
             driverName: driverDoc?.name || driverId,
-            date: new Date().toISOString().slice(0, 10),
+            date: new Date().toISOString().slice(0,10),
             time: new Date().toLocaleTimeString(),
-            status: 'Assigned',
+            status: 'pending', // initial
             createdAt: serverTimestamp()
         };
         await addDoc(collection(db, "orders"), orderData);
@@ -842,16 +828,12 @@ async function saveOrder() {
         document.getElementById('customerMap').style.display = 'none';
         document.getElementById('customerCoords').innerText = '';
         document.querySelectorAll('#prodBody tr').forEach((tr, i) => { if (i > 0) tr.remove(); });
-        document.getElementById('cName').value = '';
-        document.getElementById('cPhone').value = '';
-        document.getElementById('cAddress').value = '';
-        document.getElementById('cShop').value = '';
-        document.querySelector('.pName').value = '';
-        document.querySelector('.pQty').value = 2;
+        document.getElementById('cName').value = ''; document.getElementById('cPhone').value = '';
+        document.getElementById('cAddress').value = ''; document.getElementById('cShop').value = '';
+        document.querySelector('.pName').value = ''; document.querySelector('.pQty').value = 2;
         calc();
         showTab('m-orders');
-    } catch (e) { alert('Error: ' + e.message);
-        console.error(e); }
+    } catch (e) { alert('Error: ' + e.message); console.error(e); }
 }
 
 function renderDriverSelect() {
@@ -865,8 +847,7 @@ function renderDriverSelect() {
 
 function renderDashboard() {
     const bal = getBalances();
-    let totalToCollect = 0,
-        totalIncome = 0;
+    let totalToCollect = 0, totalIncome = 0;
     ordersCache.forEach(o => { totalIncome += o.yourIncome || 0; });
     Object.values(bal).forEach(b => totalToCollect += b.totalOwed);
     document.getElementById('dash-orders').innerText = ordersCache.length;
@@ -886,8 +867,9 @@ function renderDashboard() {
     const tbody = document.getElementById('dash-recent');
     tbody.innerHTML = ordersCache.slice(0, 8).map(o => {
         const prod = (o.products || []).map(p => p.name).join(', ').slice(0, 30);
-        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${prod||''}</td><td>${o.driverName||o.driver||''}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td></tr>`;
-    }).join('') || '<tr><td colspan="5" style="color:#94A3B8;">No orders</td></tr>';
+        const statusLabel = o.status === 'pending' ? '🛒' : o.status === 'picked' ? '🚚' : o.status === 'near' ? '📍' : '✅';
+        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${prod||''}</td><td>${o.driverName||o.driver||''}</td><td>${statusLabel}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No orders</td></tr>';
 }
 
 function getBalances() {
@@ -918,27 +900,49 @@ function renderOrders() {
         .toUpperCase().includes(filter)
     );
     tbody.innerHTML = filtered.map(o => {
-        const prodText = (o.products || []).map(p => `${p.name} x${p.qty}`).join(', ') || '';
+        const statusLabel = o.status === 'pending' ? '🛒 In Shop' : o.status === 'picked' ? '🚚 With Driver' : o.status === 'near' ? '📍 Near Client' : '✅ Delivered';
+        const statusClass = o.status === 'pending' ? 'status-pending' : o.status === 'picked' ? 'status-picked' : o.status === 'near' ? 'status-near' : 'status-delivered';
         return `<tr>
             <td>${o.id?.slice(0,5)||''}</td>
             <td>${o.customer||''}<br><small>${o.address||''}</small></td>
-            <td>${prodText.slice(0,40)||''}</td>
             <td>${o.driverName||o.driver||''}</td>
-            <td>${o.qty||0}</td>
-            <td style="color:#F59E0B;">${o.yourIncome||0} DA</td>
-            <td>${o.date||''}</td>
+            <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+            <td>
+                <select id="reassign-${o.id}" style="width:auto;padding:4px;font-size:11px;">
+                    ${driversCache.filter(d=>d.active!==false).map(d => `<option value="${d.id}" ${d.id===o.driverId?'selected':''}>${d.name}</option>`).join('')}
+                </select>
+                <button class="btn btn-primary" style="font-size:10px;padding:4px 8px;" onclick="reassignOrder('${o.id}')">Reassign</button>
+            </td>
             <td><button class="btn btn-danger" data-id="${o.id}">🗑</button></td>
         </tr>`;
-    }).join('') || '<tr><td colspan="8" style="color:#94A3B8;">No orders</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No orders</td></tr>';
+    // Delete
     tbody.querySelectorAll('button[data-id]').forEach(btn => {
         btn.addEventListener('click', async () => {
             if (!confirm('Delete order?')) return;
             try { await deleteDoc(doc(db, "orders", btn.dataset.id)); } catch (e) { alert(e.message); }
         });
     });
+    // Reassign function
+    window.reassignOrder = async function(orderId) {
+        const sel = document.getElementById('reassign-' + orderId);
+        if (!sel) return;
+        const newDriverId = sel.value;
+        const driverDoc = driversCache.find(d => d.id === newDriverId);
+        if (!driverDoc) return;
+        try {
+            await updateDoc(doc(db, "orders", orderId), {
+                driverId: newDriverId,
+                driverName: driverDoc.name,
+                driver: driverDoc.name,
+                driverEmail: driverDoc.email,
+                updatedAt: serverTimestamp()
+            });
+            alert('✅ Order reassigned to ' + driverDoc.name);
+        } catch (e) { alert(e.message); }
+    };
 }
-
-function renderSettlement() {
+    function renderSettlement() {
     const bal = {};
     ordersCache.forEach(o => {
         const id = o.driverId || o.driver;
@@ -957,10 +961,8 @@ function renderSettlement() {
         }
     });
 
-    let totalToCollect = 0,
-        totalOrders = 0;
-    Object.values(bal).forEach(b => { totalToCollect += b.totalOwed;
-        totalOrders += b.orderCount; });
+    let totalToCollect = 0, totalOrders = 0;
+    Object.values(bal).forEach(b => { totalToCollect += b.totalOwed; totalOrders += b.orderCount; });
     document.getElementById('set-toCollect').innerText = totalToCollect + ' DA';
     document.getElementById('set-orders').innerText = totalOrders;
     document.getElementById('set-collected').innerText = settlementsCache.reduce((a, b) => a + b.amount, 0) + ' DA';
@@ -983,11 +985,8 @@ function renderSettlement() {
             if (!confirm(`Take ${amount} DA from ${name} and reset to 0?`)) return;
             try {
                 await addDoc(collection(db, "settlements"), {
-                    driverId: id,
-                    driverName: name,
-                    driver: name,
-                    amount,
-                    date: new Date().toISOString().slice(0, 10),
+                    driverId: id, driverName: name, driver: name, amount,
+                    date: new Date().toISOString().slice(0,10),
                     time: new Date().toLocaleTimeString(),
                     createdAt: serverTimestamp()
                 });
@@ -1013,27 +1012,52 @@ function renderAccounting() {
         return true;
     });
     const tbody = document.getElementById('acc-body');
-    tbody.innerHTML = filtered.map(o => `
-        <tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>
-    `).join('') || '<tr><td colspan="5" style="color:#94A3B8;">No data</td></tr>';
+    tbody.innerHTML = filtered.map(o => {
+        const statusLabel = o.status === 'pending' ? '🛒' : o.status === 'picked' ? '🚚' : o.status === 'near' ? '📍' : '✅';
+        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${statusLabel}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No data</td></tr>';
 }
 
+// ─── MAP FUNCTIONS (Manager) ───
 function updateMapMarkers() {
     if (!managerMap) return;
     for (const key in window.managerMarkers) {
         try { managerMap.removeLayer(window.managerMarkers[key]); } catch (_) {}
     }
     window.managerMarkers = {};
+
+    // Drivers with colored markers and labels
     Object.entries(locationsCache).forEach(([id, loc]) => {
         if (!loc.lat || !loc.lng) return;
-        const name = driversCache.find(d => d.id === id)?.name || id;
-        const m = L.marker([loc.lat, loc.lng]).addTo(managerMap).bindPopup(`🚗 ${name}`);
+        const driver = driversCache.find(d => d.id === id);
+        const name = driver?.name || id;
+        const color = driver?.color || getDriverColor(id);
+        const icon = L.divIcon({
+            className: '',
+            html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.6);"></div><div class="marker-label" style="color:#fff;text-shadow:0 0 6px #000;">${name}</div>`,
+            iconSize: [20, 30],
+            iconAnchor: [10, 30]
+        });
+        const m = L.marker([loc.lat, loc.lng], { icon }).addTo(managerMap)
+            .bindPopup(`🚗 ${name}<br>📍 ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`);
         window.managerMarkers['driver_' + id] = m;
     });
+
+    // Customers with driver color and label "Client of driver"
     ordersCache.forEach(o => {
-        if (o.customerLat && o.customerLng) {
-            const m = L.marker([o.customerLat, o.customerLng]).addTo(managerMap)
-                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}`);
+        if (o.customerLat && o.customerLng && o.status !== 'delivered') {
+            const driverId = o.driverId;
+            const driver = driversCache.find(d => d.id === driverId);
+            const color = driver?.color || getDriverColor(driverId || 'default');
+            const label = driver ? `Client of ${driver.name}` : 'Client';
+            const icon = L.divIcon({
+                className: '',
+                html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.6);"></div><div class="marker-label" style="color:#fff;text-shadow:0 0 6px #000;">${label}</div>`,
+                iconSize: [20, 30],
+                iconAnchor: [10, 30]
+            });
+            const m = L.marker([o.customerLat, o.customerLng], { icon }).addTo(managerMap)
+                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}<br>${o.address||''}`);
             window.managerMarkers['cust_' + o.id] = m;
         }
     });
@@ -1045,14 +1069,34 @@ function updateMapDriversList() {
     let html = '';
     Object.entries(locationsCache).forEach(([id, loc]) => {
         if (!loc.lat) return;
-        const name = driversCache.find(d => d.id === id)?.name || id;
-        html += `<div class="row"><span>🚗 ${name} – ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}</span></div>`;
+        const driver = driversCache.find(d => d.id === id);
+        const name = driver?.name || id;
+        const color = driver?.color || getDriverColor(id);
+        html += `<div class="row" style="align-items:center;">
+            <span style="display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};"></span>
+                <button class="driver-list-btn" onclick="centerOnDriver('${id}')">🚗 ${name}</button>
+            </span>
+            <span>${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}</span>
+        </div>`;
     });
-    html += ordersCache.filter(o => o.customerLat).map(o =>
-        `<div class="row"><span>📍 ${o.customer} – ${o.address||''}</span></div>`
-    ).join('');
+    // Also show customers with driver association
+    ordersCache.filter(o => o.customerLat && o.status !== 'delivered').forEach(o => {
+        const driver = driversCache.find(d => d.id === o.driverId);
+        const label = driver ? `Client of ${driver.name}` : 'Client';
+        html += `<div class="row"><span>📍 ${label} – ${o.customer}</span><span>${o.address||''}</span></div>`;
+    });
     el.innerHTML = html || '<p style="color:#94A3B8;">No locations yet.</p>';
+    // Expose center function
+    window.centerOnDriver = function(driverId) {
+        const loc = locationsCache[driverId];
+        if (loc && managerMap) {
+            managerMap.setView([loc.lat, loc.lng], 15);
+        }
+    };
 }
+
+// ─── SETTINGS ───
 async function saveSettings() {
     try {
         const newSet = {
@@ -1067,18 +1111,24 @@ async function saveSettings() {
     } catch (e) { alert(e.message); }
 }
 
+// ─── DRIVER MANAGEMENT ───
 function renderSettingsDrivers() {
     const grid = document.getElementById('settingsDriversGrid');
-    grid.innerHTML = driversCache.map(d => `
-        <div class="card" style="margin:0;background:#0F172A;border:1px solid ${d.active===false?'#DC2626':'#334155'};">
-            <div style="display:flex;justify-content:space-between;"><div><b>${d.name}</b><br><small style="color:#94A3B8;">${d.email||''}<br>${d.phone||''} – ${d.vehicle||''}</small></div><span class="badge ${d.active===false?'badge-red':'badge-green'}">${d.active===false?'INACTIVE':'ACTIVE'}</span></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+    grid.innerHTML = driversCache.map(d => {
+        const color = d.color || getDriverColor(d.id);
+        return `<div class="card" style="margin:0;background:#0F172A;border:1px solid ${d.active===false?'#DC2626':'#334155'};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><b>${d.name}</b><br><small style="color:#94A3B8;">${d.email||''}<br>${d.phone||''} – ${d.vehicle||''}</small></div>
+                <span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${color};border:1px solid #fff;"></span>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+                <span class="badge ${d.active===false?'badge-red':'badge-green'}">${d.active===false?'INACTIVE':'ACTIVE'}</span>
                 <button class="btn btn-primary" data-edit="${d.id}">✏️ Edit</button>
                 <button class="btn ${d.active===false?'btn-success':'btn-warning'}" data-toggle="${d.id}" data-active="${d.active===false}">${d.active===false?'✅ Activate':'⏸ Deactivate'}</button>
-                <button class="btn btn-danger" style="grid-column:span 2;" data-del="${d.id}">🗑 Delete</button>
+                <button class="btn btn-danger" data-del="${d.id}">🗑 Delete</button>
             </div>
-        </div>
-    `).join('') || '<p style="color:#94A3B8;">No drivers – add one above.</p>';
+        </div>`;
+    }).join('') || '<p style="color:#94A3B8;">No drivers – add one above.</p>';
 
     grid.querySelectorAll('button[data-edit]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1113,8 +1163,7 @@ function renderSettingsDrivers() {
     grid.querySelectorAll('button[data-del]').forEach(btn => {
         btn.addEventListener('click', async () => {
             if (!confirm('Delete driver?')) return;
-            try { await deleteDoc(doc(db, "drivers", btn.dataset.del));
-                alert('✅ Deleted'); } catch (e) { alert(e.message); }
+            try { await deleteDoc(doc(db, "drivers", btn.dataset.del)); alert('✅ Deleted'); } catch (e) { alert(e.message); }
         });
     });
 }
@@ -1133,22 +1182,18 @@ async function saveDriver() {
         btn.disabled = true;
 
         if (editingDriverId) {
-            await updateDoc(doc(db, "drivers", editingDriverId), { name, phone, vehicle, email, active,
-                updatedAt: serverTimestamp() });
+            await updateDoc(doc(db, "drivers", editingDriverId), { name, phone, vehicle, email, active, updatedAt: serverTimestamp() });
             alert('✅ Driver updated.');
             cancelEditDriver();
         } else {
-            if (!password || password.length < 6) { alert('Password must be at least 6 characters.'); btn
-                    .innerText = 'Create Driver';
-                btn.disabled = false; return; }
+            if (!password || password.length < 6) { alert('Password must be at least 6 characters.'); btn.innerText = 'Create Driver'; btn.disabled = false; return; }
             let secondaryApp;
-            try { secondaryApp = getApp("Secondary"); } catch (_) { secondaryApp = initializeApp(config,
-                    "Secondary"); }
+            try { secondaryApp = getApp("Secondary"); } catch (_) { secondaryApp = initializeApp(config, "Secondary"); }
             const secondaryAuth = getAuth(secondaryApp);
             const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const uid = cred.user.uid;
-            await setDoc(doc(db, "drivers", uid), { name, phone, vehicle, email, active, uid,
-                createdAt: serverTimestamp() });
+            const color = getDriverColor(uid);
+            await setDoc(doc(db, "drivers", uid), { name, phone, vehicle, email, active, uid, color, createdAt: serverTimestamp() });
             await signOut(secondaryAuth);
             alert('✅ Driver created: ' + name);
             document.getElementById('drv-name').value = '';
@@ -1180,15 +1225,13 @@ function cancelEditDriver() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  INITIAL SETUP – ensure login page visible
+//  INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 loginPage.style.display = 'flex';
 appShell.style.display = 'none';
 document.getElementById('driverTabs').style.display = 'block';
 document.getElementById('managerTabs').classList.add('hidden');
-
-console.log('✅ LIVRILY single‑file app ready. Set your manager email in the code.');
+console.log('✅ LIVRILY upgraded with status, reassign, colored markers & routing.');
 </script>
 </body>
 </html>
-  
