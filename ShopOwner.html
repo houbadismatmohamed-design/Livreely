@@ -92,6 +92,7 @@
         <div id="tab-orders" class="tab">
             <div class="card">
                 <h2>📋 Incoming Orders</h2>
+                <p id="debugInfo" style="color:#94A3B8;font-size:12px;"></p>
                 <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Client</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
             </div>
         </div>
@@ -102,11 +103,11 @@
 
     <script type="module">
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  FIREBASE IMPORTS
+        //  IMPORTS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, where, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, where, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const config = {
             apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
@@ -126,7 +127,7 @@
         //  STATE
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let currentUser = null;
-        let shopId = null; // we'll use the user UID as shopId for simplicity
+        let shopId = null;
         let products = [];
         let shopOrders = [];
 
@@ -135,12 +136,12 @@
         const productsBody = document.getElementById('productsBody');
         const ordersBody = document.getElementById('ordersBody');
         const toast = document.getElementById('toast');
+        const debugInfo = document.getElementById('debugInfo');
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  TOAST
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let toastTimer;
-
         function showToast(msg) {
             toast.textContent = msg;
             toast.classList.add('show');
@@ -149,15 +150,8 @@
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  AUTH – login as shop owner
+        //  LOGIN OVERLAY
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // For demo, we'll show a simple login prompt if not logged in.
-        // Since shop owners need accounts, we'll allow creation.
-        // We'll add a quick login form on page load if not logged in.
-        // To keep it simple, we'll use the same login UI as the main app but integrated.
-        // However, we can reuse the login from the main app. For standalone, we'll include a mini login.
-
-        // We'll create a login overlay if user not authenticated.
         const loginOverlay = document.createElement('div');
         loginOverlay.id = 'loginOverlay';
         loginOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;';
@@ -183,7 +177,6 @@
         async function loginShop(email, pass) {
             try {
                 const cred = await signInWithEmailAndPassword(auth, email, pass);
-                // After login, remove overlay
                 loginOverlay.style.display = 'none';
                 showToast('✅ Logged in as ' + email);
                 return cred.user;
@@ -203,7 +196,6 @@
             loginBtn.disabled = false;
             loginBtn.textContent = 'Login';
             if (user) {
-                // also ensure shop profile exists
                 await ensureShopProfile(user);
             }
         });
@@ -227,31 +219,30 @@
         });
 
         async function ensureShopProfile(user) {
-            // Create a shop document if not exists (using UID as shopId)
             shopId = user.uid;
             const docRef = doc(db, "shops", shopId);
             await setDoc(docRef, { email: user.email, name: user.displayName || 'My Shop', createdAt: serverTimestamp() }, { merge: true });
+            console.log('Shop profile ensured for UID:', shopId);
         }
 
-        // If already logged in, hide overlay
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  AUTH STATE
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 loginOverlay.style.display = 'none';
                 currentUser = user;
                 userEmailSpan.textContent = user.email;
                 shopId = user.uid;
-                // Ensure shop profile exists
                 await ensureShopProfile(user);
-                // Start listeners
                 initListeners();
+                console.log('Shop owner logged in, shopId =', shopId);
+                debugInfo.textContent = '🔍 Your shop ID: ' + shopId;
             } else {
                 loginOverlay.style.display = 'flex';
             }
         });
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //  LOGOUT
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await signOut(auth);
             loginOverlay.style.display = 'flex';
@@ -262,21 +253,28 @@
         //  LISTENERS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function initListeners() {
-            // Products for this shop
+            // Products
             const qProducts = query(collection(db, "products"), where("shopId", "==", shopId));
             onSnapshot(qProducts, (snap) => {
                 products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderProducts();
                 updateStats();
+                console.log('Products loaded for shop:', products);
             });
 
-            // Orders for this shop
-            const qOrders = query(collection(db, "shopOrders"), where("shopId", "==", shopId), orderBy("createdAt", "desc"));
+            // Orders
+            const qOrders = query(collection(db, "shopOrders"), where("shopId", "==", shopId));
             onSnapshot(qOrders, (snap) => {
                 shopOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderOrders();
                 updateStats();
                 renderRecentOrders();
+                console.log('Orders loaded for shop:', shopOrders);
+                if (shopOrders.length === 0) {
+                    debugInfo.innerHTML += '<br>No orders found for this shop. Check that orders have the correct shopId.';
+                } else {
+                    debugInfo.innerHTML += '<br>✅ ' + shopOrders.length + ' orders found.';
+                }
             });
         }
 
@@ -301,7 +299,6 @@
             `).join('');
         }
 
-        // Expose edit/delete
         window.deleteProduct = async function(id) {
             if (!confirm('Delete this product?')) return;
             try {
@@ -317,13 +314,11 @@
             document.getElementById('prod-price').value = p.price;
             document.getElementById('prod-qty').value = p.qty;
             document.getElementById('prod-image').value = p.image || '';
-            // Change add button to update
             const btn = document.getElementById('addProductBtn');
             btn.textContent = '✏️ Update Product';
             btn.dataset.editId = id;
         };
 
-        // Add/Update product
         document.getElementById('addProductBtn').addEventListener('click', async () => {
             const name = document.getElementById('prod-name').value.trim();
             const price = parseFloat(document.getElementById('prod-price').value) || 0;
@@ -334,7 +329,7 @@
             const editId = btn.dataset.editId;
             try {
                 if (editId) {
-                    await updateDoc(doc(db, "products", editId), { name, price, qty, image, shopId });
+                    await updateDoc(doc(db, "products", editId), { name, price, qty, image });
                     showToast('✅ Product updated');
                     delete btn.dataset.editId;
                     btn.textContent = '➕ Add Product';
@@ -342,7 +337,6 @@
                     await addDoc(collection(db, "products"), { name, price, qty, image, shopId, createdAt: serverTimestamp() });
                     showToast('✅ Product added');
                 }
-                // Clear fields
                 document.getElementById('prod-name').value = '';
                 document.getElementById('prod-price').value = '';
                 document.getElementById('prod-qty').value = '';
@@ -366,32 +360,24 @@
                         ` : '—'}
                     </td>
                 </tr>
-            `).join('') || '<tr><td colspan="6">No orders</td></tr>';
+            `).join('') || '<tr><td colspan="6">No orders yet</td></tr>';
         }
 
         window.acceptOrder = async function(orderId) {
             try {
-                await updateDoc(doc(db, "shopOrders", orderId), { status: 'accepted' });
-                // Also reduce product quantities
                 const order = shopOrders.find(o => o.id === orderId);
-                if (order) {
-                    for (const item of order.items) {
-                        const productRef = doc(db, "products", item.productId);
-                        const snap = await getDoc(productRef);
-                        if (snap.exists()) {
-                            const newQty = (snap.data().qty || 0) - item.qty;
-                            await updateDoc(productRef, { qty: Math.max(newQty, 0) });
-                        }
+                if (!order) return;
+                await updateDoc(doc(db, "shopOrders", orderId), { status: 'accepted' });
+                // Reduce product quantities
+                for (const item of order.items) {
+                    const productRef = doc(db, "products", item.productId);
+                    const snap = await getDoc(productRef);
+                    if (snap.exists()) {
+                        const newQty = (snap.data().qty || 0) - item.qty;
+                        await updateDoc(productRef, { qty: Math.max(newQty, 0) });
                     }
                 }
-                showToast('✅ Order accepted. Manager will assign driver.');
-                // Also create an entry in the 'orders' collection for the manager/driver
-                // We can copy the order to a new collection 'orders' (used by manager/driver)
-                // Or we can just have the manager listen to shopOrders with status 'accepted'.
-                // We'll update the manager's existing code to also listen to shopOrders with accepted status.
-                // But for now, we'll keep it simple: manager will see a new order in his tab.
-                // We'll add a trigger: we'll create a doc in 'orders' collection for manager.
-                // Let's do that: copy to 'orders'.
+                // Copy to orders collection for manager/driver
                 const orderData = {
                     customer: order.clientName,
                     phone: order.phone,
@@ -399,7 +385,7 @@
                     products: order.items.map(i => ({ name: i.name, qty: i.qty })),
                     qty: order.items.reduce((s,i) => s + i.qty, 0),
                     clientTotal: order.total,
-                    yourIncome: order.total, // manager can set his fee
+                    yourIncome: order.total,
                     driverKeeps: 0,
                     driver: null,
                     driverId: null,
@@ -409,11 +395,11 @@
                     date: new Date().toISOString().slice(0,10),
                     time: new Date().toLocaleTimeString(),
                     createdAt: serverTimestamp(),
-                    // Keep reference to shop order
                     shopOrderId: orderId
                 };
                 await addDoc(collection(db, "orders"), orderData);
-            } catch (e) { showToast('❌ ' + e.message); }
+                showToast('✅ Order accepted. Manager can assign driver.');
+            } catch (e) { showToast('❌ ' + e.message); console.error(e); }
         };
 
         window.rejectOrder = async function(orderId) {
