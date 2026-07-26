@@ -1,100 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Login - LIVRILY</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0F172A}
-.box{background:white;padding:30px;border-radius:18px;width:95%;max-width:360px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
-.box h2{text-align:center;margin-bottom:20px;color:#0F172A}
-.box input{width:100%;padding:14px;border:1px solid #ccc;border-radius:10px;background:#f1f5f9;color:#111;font-size:14px;margin-top:10px;outline:none}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;margin-top:15px;background:#2563EB;font-size:14px}
-.btn:active{transform:scale(.98)}
-#error{color:#DC2626;text-align:center;margin-top:10px;font-size:13px;min-height:18px}
-.small{font-size:11px;color:#64748B;text-align:center;margin-top:12px}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login · LIVRILY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0F172A;
+        }
+        .box {
+            background: #1E293B;
+            padding: 34px 28px 28px;
+            border-radius: 24px;
+            width: 95%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            border: 1px solid #334155;
+        }
+        .avatar {
+            width: 72px;
+            height: 72px;
+            background: #2563EB;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            color: #fff;
+            font-size: 34px;
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+        }
+        h2 {
+            text-align: center;
+            color: #F8FAFC;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+        .sub {
+            text-align: center;
+            color: #94A3B8;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+        .box input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            background: #0F172A;
+            color: #F8FAFC;
+            font-size: 14px;
+            margin-top: 10px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .box input:focus {
+            border-color: #3B82F6;
+        }
+        .box input::placeholder {
+            color: #64748B;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 18px;
+            background: #2563EB;
+            font-size: 15px;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn-login:hover {
+            background: #1D4ED8;
+        }
+        .btn-login:active {
+            transform: scale(0.97);
+        }
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #error {
+            color: #F87171;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 13px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+        .footnote {
+            font-size: 11px;
+            color: #64748B;
+            text-align: center;
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+        .footnote span {
+            color: #38BDF8;
+        }
+    </style>
 </head>
 <body>
-<div class="box">
-<div style="width:70px;height:70px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:white;font-size:32px;font-weight:bold;">D</div>
-<h2>LIVRILY</h2>
-<input type="email" id="email" placeholder="Email" autocomplete="username">
-<input type="password" id="password" placeholder="Password" autocomplete="current-password">
-<button class="btn" id="loginBtn" type="button">LOGIN</button>
-<p id="error"></p>
-<p class="small">Enter email + password to login<br>Use phone password saver</p>
-</div>
-<script type="module">
-import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
-  authDomain: "livrily-a6e7e.firebaseapp.com",
-  projectId: "livrily-a6e7e",
-  storageBucket: "livrily-a6e7e.firebasestorage.app",
-  messagingSenderId: "904979289112",
-  appId: "1:904979289112:web:9981377a9500b940091f6d"
-};
+    <div class="box">
+        <div class="avatar">L</div>
+        <h2>LIVRILY</h2>
+        <p class="sub">Cash on Delivery · Driver Hub</p>
 
-let app;
-try{ app = getApps().length ? getApp() : initializeApp(firebaseConfig); }catch{ app = initializeApp(firebaseConfig); }
-const auth = getAuth(app);
-const db = getFirestore(app);
+        <input type="email" id="email" placeholder="Email" autocomplete="username" />
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
 
-// Force no auto-login - clear any existing session on load
-try{ await setPersistence(auth, inMemoryPersistence); }catch(e){}
-try{ await signOut(auth); }catch(e){}
+        <button class="btn-login" id="loginBtn" type="button">LOGIN</button>
+        <p id="error"></p>
+        <p class="footnote">
+            Manager + Driver access · <span>COD</span> · All fees free
+        </p>
+    </div>
 
-const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
-const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
-function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
+    <script type="module">
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  FIREBASE INIT
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            signOut,
+            setPersistence,
+            inMemoryPersistence,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-async function doLogin(){
-  const emailEl=document.getElementById('email');
-  const passEl=document.getElementById('password');
-  const errEl=document.getElementById('error');
-  const btn=document.getElementById('loginBtn');
-  errEl.innerText='';
-  let email=emailEl.value.trim();
-  let pass=passEl.value;
-  if(!email||!pass){ errEl.innerText='Enter email & password'; return; }
-  btn.innerText='Logging...';
-  btn.disabled=true;
-  try{
-    await setPersistence(auth, inMemoryPersistence);
-    let cred=await signInWithEmailAndPassword(auth,email,pass);
-    let user=cred.user;
-    // Check if driver deactivated
-    if(!isManager(user)){
-      try{
-        let snap=await getDoc(doc(db,"drivers",user.uid));
-        if(snap.exists() && snap.data().active===false){
-          errEl.innerText='Account deactivated by manager';
-          await signOut(auth);
-          btn.innerText='LOGIN';
-          btn.disabled=false;
-          return;
+        const config = {
+            apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+            authDomain: "livrily-a6e7e.firebaseapp.com",
+            projectId: "livrily-a6e7e",
+            storageBucket: "livrily-a6e7e.firebasestorage.app",
+            messagingSenderId: "904979289112",
+            appId: "1:904979289112:web:9981377a9500b940091f6d"
+        };
+
+        let app;
+        try {
+            app = getApps().length ? getApp() : initializeApp(config);
+        } catch (_) {
+            app = initializeApp(config);
         }
-      }catch(e){}
-    }
-    // Redirect based on role
-    if(isManager(user)){
-      location.href='Manager.html';
-    }else{
-      location.href='Driver.html';
-    }
-  }catch(e){
-    errEl.innerText=e.message.replace('Firebase:','').trim();
-    btn.innerText='LOGIN';
-    btn.disabled=false;
-  }
-}
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-document.getElementById('loginBtn').addEventListener('click', doLogin);
-document.getElementById('password').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-</script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  MANAGER IDENTIFICATION  (email-based, more reliable)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"];
+        const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+
+        function isManager(user) {
+            if (!user) return false;
+            if (user.uid === MANAGER_UID) return true;
+            if (user.email && MANAGER_EMAILS.includes(user.email.toLowerCase())) return true;
+            return false;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  CLEAR SESSION ON LOAD  (in-memory only, no auto-login)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        (async function init() {
+            try {
+                await setPersistence(auth, inMemoryPersistence);
+                await signOut(auth);
+            } catch (_) { /* ignore */ }
+
+            // If somehow already logged in, redirect
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    try {
+                        const snap = await getDoc(doc(db, "drivers", user.uid));
+                        const active = snap.exists() ? snap.data().active : true;
+                        if (active === false) {
+                            await signOut(auth);
+                            document.getElementById('error').innerText = 'Account deactivated.';
+                            return;
+                        }
+                        if (isManager(user)) {
+                            location.href = 'Manager.html';
+                        } else {
+                            location.href = 'Driver.html';
+                        }
+                    } catch (_) {
+                        // fallback: if driver doc missing, treat as driver
+                        if (!isManager(user)) location.href = 'Driver.html';
+                        else location.href = 'Manager.html';
+                    }
+                }
+            });
+        })();
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  LOGIN HANDLER
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const emailEl = document.getElementById('email');
+        const passEl = document.getElementById('password');
+        const errEl = document.getElementById('error');
+        const btn = document.getElementById('loginBtn');
+
+        async function doLogin() {
+            const email = emailEl.value.trim();
+            const pass = passEl.value;
+            errEl.innerText = '';
+
+            if (!email || !pass) {
+                errEl.innerText = 'Enter email and password.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Logging…';
+
+            try {
+                await setPersistence(auth, inMemoryPersistence);
+                const cred = await signInWithEmailAndPassword(auth, email, pass);
+                const user = cred.user;
+
+                // Check if driver is deactivated (skip for manager)
+                if (!isManager(user)) {
+                    try {
+                        const snap = await getDoc(doc(db, "drivers", user.uid));
+                        if (snap.exists() && snap.data().active === false) {
+                            errEl.innerText = 'Account deactivated by manager.';
+                            await signOut(auth);
+                            btn.disabled = false;
+                            btn.innerText = 'LOGIN';
+                            return;
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+
+                // Redirect
+                if (isManager(user)) {
+                    location.href = 'Manager.html';
+                } else {
+                    location.href = 'Driver.html';
+                }
+            } catch (e) {
+                let msg = e.message.replace(/Firebase: /i, '').replace(/\(.*\)/, '').trim();
+                if (msg.includes('user-not-found')) msg = 'No account with this email.';
+                else if (msg.includes('wrong-password')) msg = 'Incorrect password.';
+                else if (msg.includes('invalid-email')) msg = 'Invalid email format.';
+                else if (msg.includes('too-many-requests')) msg = 'Too many attempts. Wait a moment.';
+                errEl.innerText = msg;
+                btn.disabled = false;
+                btn.innerText = 'LOGIN';
+            }
+        }
+
+        btn.addEventListener('click', doLogin);
+        passEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+        emailEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') passEl.focus();
+        });
+    </script>
 </body>
 </html>
