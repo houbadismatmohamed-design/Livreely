@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - LIVRILY</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0F172A}
+.box{background:white;padding:30px;border-radius:18px;width:95%;max-width:360px;box-shadow:0 15px 40px rgba(0,0,0,.3)}
+.box h2{text-align:center;margin-bottom:20px;color:#0F172A}
+.box input{width:100%;padding:14px;border:1px solid #ccc;border-radius:10px;background:#f1f5f9;color:#111;font-size:14px;margin-top:10px;outline:none}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;margin-top:15px;background:#2563EB;font-size:14px}
+.btn:active{transform:scale(.98)}
+#error{color:#DC2626;text-align:center;margin-top:10px;font-size:13px;min-height:18px}
+.small{font-size:11px;color:#64748B;text-align:center;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="box">
+<div style="width:70px;height:70px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;color:white;font-size:32px;font-weight:bold;">D</div>
+<h2>LIVRILY</h2>
+<input type="email" id="email" placeholder="Email" autocomplete="username">
+<input type="password" id="password" placeholder="Password" autocomplete="current-password">
+<button class="btn" id="loginBtn" type="button">LOGIN</button>
+<p id="error"></p>
+<p class="small">Enter email + password to login<br>Use phone password saver</p>
+</div>
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+  authDomain: "livrily-a6e7e.firebaseapp.com",
+  projectId: "livrily-a6e7e",
+  storageBucket: "livrily-a6e7e.firebasestorage.app",
+  messagingSenderId: "904979289112",
+  appId: "1:904979289112:web:9981377a9500b940091f6d"
+};
+
+let app;
+try{ app = getApps().length ? getApp() : initializeApp(firebaseConfig); }catch{ app = initializeApp(firebaseConfig); }
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Force no auto-login - clear any existing session on load
+try{ await setPersistence(auth, inMemoryPersistence); }catch(e){}
+try{ await signOut(auth); }catch(e){}
+
+const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+const MANAGER_EMAIL = "houbadismatmohamed@gmail.com";
+function isManager(u){ return u && (u.uid===MANAGER_UID || u.email===MANAGER_EMAIL); }
+
+async function doLogin(){
+  const emailEl=document.getElementById('email');
+  const passEl=document.getElementById('password');
+  const errEl=document.getElementById('error');
+  const btn=document.getElementById('loginBtn');
+  errEl.innerText='';
+  let email=emailEl.value.trim();
+  let pass=passEl.value;
+  if(!email||!pass){ errEl.innerText='Enter email & password'; return; }
+  btn.innerText='Logging...';
+  btn.disabled=true;
+  try{
+    await setPersistence(auth, inMemoryPersistence);
+    let cred=await signInWithEmailAndPassword(auth,email,pass);
+    let user=cred.user;
+    // Check if driver deactivated
+    if(!isManager(user)){
+      try{
+        let snap=await getDoc(doc(db,"drivers",user.uid));
+        if(snap.exists() && snap.data().active===false){
+          errEl.innerText='Account deactivated by manager';
+          await signOut(auth);
+          btn.innerText='LOGIN';
+          btn.disabled=false;
+          return;
+        }
+      }catch(e){}
+    }
+    // Redirect based on role
+    if(isManager(user)){
+      location.href='Manager.html';
+    }else{
+      location.href='Driver.html';
+    }
+  }catch(e){
+    errEl.innerText=e.message.replace('Firebase:','').trim();
+    btn.innerText='LOGIN';
+    btn.disabled=false;
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('password').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
