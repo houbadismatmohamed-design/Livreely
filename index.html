@@ -28,23 +28,22 @@
         #error{color:#F87171;text-align:center;margin-top:12px;font-size:13px;min-height:20px;font-weight:500}
         .footnote{font-size:11px;color:#64748B;text-align:center;margin-top:16px;line-height:1.5}
         #appShell{display:none}
-        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155}
+        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155;flex-wrap:wrap;gap:8px}
         .logo{color:#38BDF8;font-weight:700;font-size:18px}
         .logo small{font-size:11px;background:#38BDF8;color:#0F172A;padding:2px 10px;border-radius:20px;margin-left:8px;font-weight:600}
-        .user-info{display:flex;align-items:center;gap:12px}
+        .user-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .user-info span{color:#94A3B8;font-size:12px}
+        .lang-selector{display:flex;gap:4px;background:#0F172A;border-radius:8px;padding:2px}
+        .lang-selector button{background:transparent;border:none;color:#94A3B8;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s}
+        .lang-selector button.active{background:#2563EB;color:#fff}
+        .lang-selector button:hover{background:#334155;color:#fff}
         .btn{padding:7px 14px;border:none;border-radius:8px;font-weight:600;font-size:12px;transition:.1s;cursor:pointer}
         .btn:active{transform:scale(.96)}
-        .btn-danger{background:#DC2626;color:#fff}
-        .btn-danger:hover{background:#B91C1C}
-        .btn-primary{background:#2563EB;color:#fff}
-        .btn-primary:hover{background:#1D4ED8}
-        .btn-success{background:#16A34A;color:#fff}
-        .btn-success:hover{background:#15803D}
-        .btn-warning{background:#F59E0B;color:#0F172A}
-        .btn-warning:hover{background:#D97706}
-        .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}
-        .btn-outline:hover{background:#334155}
+        .btn-danger{background:#DC2626;color:#fff}.btn-danger:hover{background:#B91C1C}
+        .btn-primary{background:#2563EB;color:#fff}.btn-primary:hover{background:#1D4ED8}
+        .btn-success{background:#16A34A;color:#fff}.btn-success:hover{background:#15803D}
+        .btn-warning{background:#F59E0B;color:#0F172A}.btn-warning:hover{background:#D97706}
+        .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}.btn-outline:hover{background:#334155}
         .btn-lg{padding:12px 20px;font-size:15px}
         nav{display:flex;gap:6px;flex-wrap:wrap;background:#1E293B;padding:10px 16px;position:sticky;top:60px;z-index:999;border-bottom:1px solid #334155}
         nav button{color:#CBD5E1;background:transparent;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:500;transition:.15s;cursor:pointer}
@@ -54,8 +53,7 @@
         .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px;border:1px solid #334155}
         .card h2{color:#38BDF8;font-size:15px;margin-bottom:10px}
         .card h3{font-size:13px;color:#CBD5E1}
-        .tab{display:none}
-        .tab.active{display:block}
+        .tab{display:none}.tab.active{display:block}
         .summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
         .summaryCard{background:#0F172A;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center}
         .summaryCard h1{font-size:24px;margin-top:4px}
@@ -81,30 +79,43 @@
         .marker-label{font-weight:700;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.8);color:#fff;white-space:nowrap}
         .driver-list-btn{background:transparent;border:none;color:#38BDF8;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:6px}
         .driver-list-btn:hover{background:#334155}
+        /* Toast notification */
+        #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #38BDF8;color:#F8FAFC;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:90%;text-align:center}
+        #toast.show{display:block;animation:fadeIn .3s}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @media(max-width:600px){nav button{font-size:10px;padding:6px 10px}.summaryGrid{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
+<!-- Toast -->
+<div id="toast"></div>
+
 <!-- LOGIN -->
 <div id="loginPage">
     <div class="login-box">
         <div class="avatar">L</div>
         <h2>LIVRILY</h2>
-        <p class="sub">Cash on Delivery · Driver Hub</p>
+        <p class="sub" data-i18n="login_sub">Cash on Delivery · Driver Hub</p>
         <input type="email" id="email" placeholder="Email" autocomplete="username" />
         <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-        <button class="btn-login" id="loginBtn">LOGIN</button>
+        <button class="btn-login" id="loginBtn" data-i18n="login_btn">LOGIN</button>
         <p id="error"></p>
-        <p class="footnote">Manager + Driver · <strong style="color:#38BDF8;">COD</strong> · Fees free</p>
+        <p class="footnote" data-i18n="login_footnote">Manager + Driver · <strong style="color:#38BDF8;">COD</strong> · Fees free</p>
     </div>
 </div>
+
 <!-- APP SHELL -->
 <div id="appShell">
     <header>
         <div class="logo">🚚 LIVRILY <small id="roleBadge">DRIVER</small></div>
         <div class="user-info">
             <span id="userEmail"></span>
-            <button class="btn btn-danger" id="logoutBtn">Logout</button>
+            <div class="lang-selector">
+                <button class="active" data-lang="en">EN</button>
+                <button data-lang="fr">FR</button>
+                <button data-lang="ar">ع</button>
+            </div>
+            <button class="btn btn-danger" id="logoutBtn" data-i18n="logout">Logout</button>
         </div>
     </header>
     <nav id="mainNav"></nav>
@@ -121,37 +132,37 @@
                             <span id="status" style="background:#16A34A;padding:4px 12px;border-radius:20px;font-size:11px;">🟢 Available</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="toggleStatusBtn">Change Availability</button>
+                    <button class="btn btn-primary" style="width:100%;margin-top:12px;" id="toggleStatusBtn" data-i18n="change_avail">Change Availability</button>
                 </div>
                 <div class="card">
-                    <h2>💰 Your Balance – Owe to Manager</h2>
+                    <h2 data-i18n="balance_title">💰 Your Balance – Owe to Manager</h2>
                     <h1 id="owe" style="text-align:center;color:#F59E0B;font-size:32px;">0 DA</h1>
-                    <p style="text-align:center;color:#94A3B8;font-size:11px;">You collected from clients – you owe this. Manager resets when you settle.</p>
+                    <p style="text-align:center;color:#94A3B8;font-size:11px;" data-i18n="balance_sub">You collected from clients – you owe this. Manager resets when you settle.</p>
                     <div id="breakdown"></div>
                 </div>
                 <div class="card">
-                    <h2>📊 Today's Stats</h2>
+                    <h2 data-i18n="stats_title">📊 Today's Stats</h2>
                     <div class="summaryGrid">
-                        <div class="summaryCard"><b id="completed">0</b><br><small>Orders</small></div>
-                        <div class="summaryCard"><b id="kept" style="color:#22C55E;">0 DA</b><br><small>You Kept</small></div>
-                        <div class="summaryCard"><b id="collected">0 DA</b><br><small>Collected</small></div>
+                        <div class="summaryCard"><b id="completed">0</b><br><small data-i18n="stats_orders">Orders</small></div>
+                        <div class="summaryCard"><b id="kept" style="color:#22C55E;">0 DA</b><br><small data-i18n="stats_kept">You Kept</small></div>
+                        <div class="summaryCard"><b id="collected">0 DA</b><br><small data-i18n="stats_collected">Collected</small></div>
                     </div>
                 </div>
                 <div class="card">
-                    <h2>📍 Share Location</h2>
+                    <h2 data-i18n="gps_title">📍 Share Location</h2>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-                        <button class="btn btn-success" id="startGpsBtn">📍 Start GPS</button>
-                        <button class="btn btn-danger" id="stopGpsBtn">⏹ Stop</button>
+                        <button class="btn btn-success" id="startGpsBtn" data-i18n="gps_start">📍 Start GPS</button>
+                        <button class="btn btn-danger" id="stopGpsBtn" data-i18n="gps_stop">⏹ Stop</button>
                     </div>
-                    <p id="gpsStatus" style="font-size:11px;color:#94A3B8;margin-top:8px;">GPS not started</p>
+                    <p id="gpsStatus" style="font-size:11px;color:#94A3B8;margin-top:8px;" data-i18n="gps_not_started">GPS not started</p>
                 </div>
             </div>
             <div id="tab-orders" class="tab">
                 <div class="card">
-                    <h2>📋 My Orders – Update Status</h2>
+                    <h2 data-i18n="my_orders_title">📋 My Orders – Update Status</h2>
                     <div style="overflow-x:auto;">
                         <table>
-                            <thead><tr><th>#</th><th>Customer</th><th>Products</th><th>Qty</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
+                            <thead><tr><th data-i18n="th_id">#</th><th data-i18n="th_customer">Customer</th><th data-i18n="th_products">Products</th><th data-i18n="th_qty">Qty</th><th data-i18n="th_address">Address</th><th data-i18n="th_status">Status</th><th data-i18n="th_actions">Actions</th></tr></thead>
                             <tbody id="ordersBody"></tbody>
                         </table>
                     </div>
@@ -159,14 +170,15 @@
             </div>
             <div id="tab-map" class="tab">
                 <div class="card">
-                    <h2>🗺️ My Location + Customers</h2>
+                    <h2 data-i18n="map_title">🗺️ My Location + Customers</h2>
                     <div id="map"></div>
-                    <button class="btn btn-primary" style="margin-top:10px;" id="centerMapBtn">📍 Center on Me</button>
+                    <button class="btn btn-primary" style="margin-top:10px;" id="centerMapBtn" data-i18n="center_me">📍 Center on Me</button>
                 </div>
             </div>
         </div>
-        <!-- MANAGER TABS -->
+        <!-- MANAGER TABS (unchanged, we'll keep as before) -->
         <div id="managerTabs" class="hidden">
+            <!-- same as before, but we'll add i18n later if needed, for now keep English -->
             <div id="tab-m-dashboard" class="tab active">
                 <div class="card"><h2>📊 Overview</h2><div class="summaryGrid">
                         <div class="summaryCard"><h3>Orders</h3><h1 id="dash-orders">0</h1></div>
@@ -244,7 +256,7 @@
 
 <script type="module">
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  FIREBASE IMPORTS & CONFIG
+//  IMPORTS & CONFIG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
@@ -271,7 +283,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  MANAGER CONFIG – CHANGE EMAIL HERE
+//  MANAGER CONFIG – CHANGE EMAIL
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const MANAGER_EMAILS = ["houbadismatmohamed@gmail.com"]; // ← YOUR MANAGER EMAIL
 const MANAGER_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
@@ -282,6 +294,169 @@ function isManager(user) {
     if (user.email && MANAGER_EMAILS.includes(user.email.toLowerCase())) return true;
     return false;
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  i18n – Multi‑language
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const translations = {
+    en: {
+        login_sub: "Cash on Delivery · Driver Hub",
+        login_btn: "LOGIN",
+        login_footnote: "Manager + Driver · COD · Fees free",
+        logout: "Logout",
+        change_avail: "Change Availability",
+        balance_title: "💰 Your Balance – Owe to Manager",
+        balance_sub: "You collected from clients – you owe this. Manager resets when you settle.",
+        stats_title: "📊 Today's Stats",
+        stats_orders: "Orders",
+        stats_kept: "You Kept",
+        stats_collected: "Collected",
+        gps_title: "📍 Share Location",
+        gps_start: "📍 Start GPS",
+        gps_stop: "⏹ Stop",
+        gps_not_started: "GPS not started",
+        my_orders_title: "📋 My Orders – Update Status",
+        th_id: "#",
+        th_customer: "Customer",
+        th_products: "Products",
+        th_qty: "Qty",
+        th_address: "Address",
+        th_status: "Status",
+        th_actions: "Actions",
+        map_title: "🗺️ My Location + Customers",
+        center_me: "📍 Center on Me",
+        status_pending: "🛒 In Shop",
+        status_picked: "🚚 With Driver",
+        status_near: "📍 Near Client",
+        status_delivered: "✅ Delivered",
+        btn_pick: "📦 Picked Up",
+        btn_near: "📍 Near Client",
+        btn_deliver: "✅ Delivered",
+        nav_btn: "🧭 Navigate",
+        open_gmaps: "Open in Google Maps",
+        toast_new_order: "📦 New order assigned to you!",
+        driver_offline: "⚫ Offline",
+        driver_online: "🟢 Available",
+    },
+    fr: {
+        login_sub: "Paiement à la livraison · Hub chauffeur",
+        login_btn: "SE CONNECTER",
+        login_footnote: "Manager + Chauffeur · COD · Frais gratuits",
+        logout: "Déconnexion",
+        change_avail: "Changer disponibilité",
+        balance_title: "💰 Votre solde – Dû au manager",
+        balance_sub: "Vous avez collecté auprès des clients – vous devez cela. Le manager réinitialise lors du règlement.",
+        stats_title: "📊 Statistiques du jour",
+        stats_orders: "Commandes",
+        stats_kept: "Vous gardez",
+        stats_collected: "Collecté",
+        gps_title: "📍 Partager la position",
+        gps_start: "📍 Démarrer GPS",
+        gps_stop: "⏹ Arrêter",
+        gps_not_started: "GPS non démarré",
+        my_orders_title: "📋 Mes commandes – Mettre à jour le statut",
+        th_id: "#",
+        th_customer: "Client",
+        th_products: "Produits",
+        th_qty: "Qté",
+        th_address: "Adresse",
+        th_status: "Statut",
+        th_actions: "Actions",
+        map_title: "🗺️ Ma position + Clients",
+        center_me: "📍 Centrer sur moi",
+        status_pending: "🛒 En magasin",
+        status_picked: "🚚 Avec chauffeur",
+        status_near: "📍 Près du client",
+        status_delivered: "✅ Livré",
+        btn_pick: "📦 Prise en charge",
+        btn_near: "📍 Près du client",
+        btn_deliver: "✅ Livré",
+        nav_btn: "🧭 Naviguer",
+        open_gmaps: "Ouvrir dans Google Maps",
+        toast_new_order: "📦 Nouvelle commande assignée !",
+        driver_offline: "⚫ Hors ligne",
+        driver_online: "🟢 Disponible",
+    },
+    ar: {
+        login_sub: "الدفع عند الاستلام · مركز السائقين",
+        login_btn: "تسجيل الدخول",
+        login_footnote: "مدير + سائق · الدفع عند الاستلام · بدون رسوم",
+        logout: "تسجيل الخروج",
+        change_avail: "تغيير التوفر",
+        balance_title: "💰 رصيدك – المستحق للمدير",
+        balance_sub: "لقد جمعت من العملاء – هذا ما تدين به. يقوم المدير بإعادة الضبط عند التسوية.",
+        stats_title: "📊 إحصائيات اليوم",
+        stats_orders: "الطلبات",
+        stats_kept: "ما تحتفظ به",
+        stats_collected: "المجموع",
+        gps_title: "📍 مشاركة الموقع",
+        gps_start: "📍 تشغيل GPS",
+        gps_stop: "⏹ إيقاف",
+        gps_not_started: "GPS لم يبدأ",
+        my_orders_title: "📋 طلباتي – تحديث الحالة",
+        th_id: "#",
+        th_customer: "العميل",
+        th_products: "المنتجات",
+        th_qty: "الكمية",
+        th_address: "العنوان",
+        th_status: "الحالة",
+        th_actions: "إجراءات",
+        map_title: "🗺️ موقعي + العملاء",
+        center_me: "📍 توسيط على موقعي",
+        status_pending: "🛒 في المتجر",
+        status_picked: "🚚 مع السائق",
+        status_near: "📍 قرب العميل",
+        status_delivered: "✅ تم التوصيل",
+        btn_pick: "📦 تم الاستلام",
+        btn_near: "📍 قرب العميل",
+        btn_deliver: "✅ تم التوصيل",
+        nav_btn: "🧭 تنقل",
+        open_gmaps: "فتح في خرائط Google",
+        toast_new_order: "📦 تم تعيين طلب جديد لك!",
+        driver_offline: "⚫ غير متصل",
+        driver_online: "🟢 متاح",
+    }
+};
+
+let currentLang = 'en';
+
+function t(key) {
+    return translations[currentLang]?.[key] || key;
+}
+
+function updateUI() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+    // Update dynamic elements that are not data-i18n
+    // We'll update status texts, button texts etc in render functions.
+    // Also update nav buttons if they have data-i18n
+    document.querySelectorAll('#mainNav button').forEach(btn => {
+        const key = btn.getAttribute('data-i18n');
+        if (key) btn.textContent = t(key);
+    });
+}
+
+// Language selector
+document.querySelectorAll('.lang-selector button').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.lang-selector button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLang = btn.dataset.lang;
+        updateUI();
+        // Re-render dynamic content if needed
+        if (currentRole === 'driver') {
+            renderDriverOrders(); // re-render with new language
+            renderDriverDashboard();
+        } else if (currentRole === 'manager') {
+            renderOrders();
+            renderDashboard();
+            renderSettlement();
+            renderAccounting();
+        }
+    });
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GLOBAL STATE
@@ -295,10 +470,11 @@ let driverMarker = null, customerMarker = null;
 let customerLatLng = null;
 let watchId = null, lastLocationSave = 0;
 let editingDriverId = null;
-let routingControl = null; // for route
+let routingControl = null;
+let previousOrderIds = new Set(); // for notifications
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  COLOR PALETTE FOR DRIVERS
+//  COLORS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const DRIVER_COLORS = [
     '#E74C3C','#3498DB','#2ECC71','#F1C40F','#9B59B6','#1ABC9C',
@@ -307,7 +483,6 @@ const DRIVER_COLORS = [
 ];
 
 function getDriverColor(driverId) {
-    // deterministic based on uid
     let idx = 0;
     for (let i=0; i<driverId.length; i++) idx += driverId.charCodeAt(i);
     return DRIVER_COLORS[idx % DRIVER_COLORS.length];
@@ -347,7 +522,7 @@ async function doLogin() {
                 errorEl.innerText = 'Account deactivated.';
                 await signOut(auth);
                 loginBtn.disabled = false;
-                loginBtn.innerText = 'LOGIN';
+                loginBtn.innerText = t('login_btn');
                 return;
             }
         }
@@ -359,7 +534,7 @@ async function doLogin() {
         else if (msg.includes('too-many-requests')) msg = 'Too many attempts. Wait.';
         errorEl.innerText = msg;
         loginBtn.disabled = false;
-        loginBtn.innerText = 'LOGIN';
+        loginBtn.innerText = t('login_btn');
     }
 }
 
@@ -407,12 +582,13 @@ function showDriverUI() {
     document.getElementById('driverTabs').style.display = 'block';
     document.getElementById('managerTabs').classList.add('hidden');
     mainNav.innerHTML = `
-        <button class="active" data-tab="dashboard">🛵 My Dashboard</button>
-        <button data-tab="orders">📋 My Orders</button>
-        <button data-tab="map">🗺️ Map</button>
+        <button class="active" data-tab="dashboard" data-i18n="nav_dashboard">🛵 My Dashboard</button>
+        <button data-tab="orders" data-i18n="nav_orders">📋 My Orders</button>
+        <button data-tab="map" data-i18n="nav_map">🗺️ Map</button>
     `;
     attachNavEvents();
     showTab('dashboard');
+    updateUI();
 }
 
 function showManagerUI() {
@@ -448,7 +624,21 @@ function showTab(tabId) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  DRIVER LOGIC
+//  TOAST NOTIFICATION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let toastTimeout;
+
+function showToast(msg, duration = 5000) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        el.classList.remove('show');
+    }, duration);
+}
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DRIVER LOGIC (with notification & map)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let driverOrders = [], driverSettlements = [];
 
@@ -462,13 +652,15 @@ function initDriver() {
         document.getElementById('avatar').innerText = name[0].toUpperCase();
     }).catch(console.error);
 
+    // Listen orders with notification detection
+    let firstLoad = true;
     const unsub1 = onSnapshot(query(collection(db, "orders"), orderBy("createdAt", "desc")), (snap) => {
         const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         const myName = document.getElementById('driverName')?.innerText?.toLowerCase() || '';
         const myEmail = currentUser.email.toLowerCase();
         const myUid = currentUser.uid;
         const emailPrefix = myEmail.split('@')[0].toLowerCase();
-        driverOrders = all.filter(o => {
+        const newOrders = all.filter(o => {
             if (o.driverId === myUid) return true;
             if (o.driverEmail && o.driverEmail.toLowerCase() === myEmail) return true;
             if (o.driverName && o.driverName.toLowerCase() === myName) return true;
@@ -478,6 +670,24 @@ function initDriver() {
             if (o.driver && o.driver.toLowerCase().includes(emailPrefix)) return true;
             return false;
         });
+        // Check for new order notification
+        if (!firstLoad) {
+            const newIds = new Set(newOrders.map(o => o.id));
+            for (const id of newIds) {
+                if (!previousOrderIds.has(id)) {
+                    // new order!
+                    const order = newOrders.find(o => o.id === id);
+                    if (order) {
+                        showToast(t('toast_new_order') + ' – ' + order.customer);
+                        break;
+                    }
+                }
+            }
+        }
+        previousOrderIds = new Set(newOrders.map(o => o.id));
+        firstLoad = false;
+
+        driverOrders = newOrders;
         renderDriverDashboard();
         renderDriverOrders();
         updateDriverMapCustomers();
@@ -497,13 +707,20 @@ function initDriver() {
 
     if (!driverMap) {
         driverMap = L.map('map').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, CartoDB' }).addTo(driverMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, CartoDB'
+        }).addTo(driverMap);
     }
 
     document.getElementById('toggleStatusBtn').addEventListener('click', () => {
         const el = document.getElementById('status');
-        if (el.innerText.includes('Available')) { el.innerText = '⚫ Offline'; el.style.background = '#64748B'; }
-        else { el.innerText = '🟢 Available'; el.style.background = '#16A34A'; }
+        if (el.innerText.includes('Available') || el.innerText.includes('Disponible') || el.innerText.includes('متاح')) {
+            el.innerText = t('driver_offline');
+            el.style.background = '#64748B';
+        } else {
+            el.innerText = t('driver_online');
+            el.style.background = '#16A34A';
+        }
     });
 
     document.getElementById('startGpsBtn').addEventListener('click', startGps);
@@ -515,7 +732,9 @@ function initDriver() {
 }
 
 function renderDriverDashboard() {
-    const totalOwed = driverOrders.reduce((a, b) => a + (b.yourIncome || 0), 0) - driverSettlements.reduce((a, b) => a + b.amount, 0);
+    let totalOwed = driverOrders.reduce((a, b) => a + (b.yourIncome || 0), 0) - driverSettlements.reduce((a, b) => a + b.amount, 0);
+    // If negative, show 0 but keep note? We'll just show 0.
+    if (totalOwed < 0) totalOwed = 0;
     const totalKept = driverOrders.reduce((a, b) => a + (b.driverKeeps || 0), 0);
     const totalCollected = driverOrders.reduce((a, b) => a + (b.clientTotal || 0), 0);
     const totalClientFee = driverOrders.reduce((a, b) => a + (b.clientFee || 0), 0);
@@ -532,10 +751,15 @@ function renderDriverDashboard() {
 function renderDriverOrders() {
     const tbody = document.getElementById('ordersBody');
     if (!tbody) return;
+    const statusMap = {
+        pending: { class: 'status-pending', label: t('status_pending') },
+        picked: { class: 'status-picked', label: t('status_picked') },
+        near: { class: 'status-near', label: t('status_near') },
+        delivered: { class: 'status-delivered', label: t('status_delivered') }
+    };
     tbody.innerHTML = driverOrders.map(o => {
         const status = o.status || 'pending';
-        const statusClass = status === 'pending' ? 'status-pending' : status === 'picked' ? 'status-picked' : status === 'near' ? 'status-near' : 'status-delivered';
-        const statusLabel = status === 'pending' ? '🛒 In Shop' : status === 'picked' ? '🚚 With Driver' : status === 'near' ? '📍 Near Client' : '✅ Delivered';
+        const st = statusMap[status] || statusMap.pending;
         const canUpdate = status !== 'delivered';
         return `<tr>
             <td>${o.id?.slice(0,5)||''}</td>
@@ -543,41 +767,32 @@ function renderDriverOrders() {
             <td style="max-width:100px;white-space:pre-wrap;">${(o.products||[]).map(p=>p.name).join(', ')}</td>
             <td>${o.qty||0}</td>
             <td style="max-width:100px;white-space:pre-wrap;">${o.address||''}<br><small>${o.shop||''}</small></td>
-            <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+            <td><span class="status-badge ${st.class}">${st.label}</span></td>
             <td>
                 ${canUpdate ? `
                     <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
-                        <button class="btn btn-warning btn-lg" onclick="updateOrderStatus('${o.id}','picked')">📦 Picked Up</button>
-                        <button class="btn btn-primary btn-lg" onclick="updateOrderStatus('${o.id}','near')">📍 Near Client</button>
-                        <button class="btn btn-success btn-lg" onclick="updateOrderStatus('${o.id}','delivered')">✅ Delivered</button>
+                        <button class="btn btn-warning btn-lg" onclick="updateOrderStatus('${o.id}','picked')">${t('btn_pick')}</button>
+                        <button class="btn btn-primary btn-lg" onclick="updateOrderStatus('${o.id}','near')">${t('btn_near')}</button>
+                        <button class="btn btn-success btn-lg" onclick="updateOrderStatus('${o.id}','delivered')">${t('btn_deliver')}</button>
                     </div>
                 ` : '✅ Done'}
             </td>
         </tr>`;
-    }).join('') || '<tr><td colspan="7" style="color:#94A3B8;">No orders yet.</td></tr>';
-    // Expose update function globally
+    }).join('') || `<tr><td colspan="7" style="color:#94A3B8;">${t('no_orders') || 'No orders yet.'}</td></tr>`;
+    // Expose update function
     window.updateOrderStatus = async function(orderId, status) {
         try {
             await updateDoc(doc(db, "orders", orderId), { status, updatedAt: serverTimestamp() });
-            if (status === 'delivered') {
-                // remove from map
-                const order = driverOrders.find(o => o.id === orderId);
-                if (order && order.customerLat && order.customerLng) {
-                    // will be removed on next snapshot
-                }
-            }
         } catch (e) { alert(e.message); }
     };
 }
 
 function updateDriverMapCustomers() {
     if (!driverMap) return;
-    // Remove old customer markers (keep driver marker)
     for (const key in window.customerMarkers) {
         try { driverMap.removeLayer(window.customerMarkers[key]); } catch (_) {}
     }
     window.customerMarkers = {};
-    // Also remove routing if any
     if (routingControl) {
         driverMap.removeControl(routingControl);
         routingControl = null;
@@ -585,7 +800,9 @@ function updateDriverMapCustomers() {
     driverOrders.forEach(o => {
         if (o.customerLat && o.customerLng && o.status !== 'delivered') {
             const m = L.marker([o.customerLat, o.customerLng]).addTo(driverMap)
-                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}<br><button class="btn btn-primary btn-sm" onclick="navigateTo('${o.id}')">🧭 Navigate</button>`);
+                .bindPopup(`👤 ${o.customer}<br>📦 ${(o.products||[]).map(p=>p.name).join(', ')}<br>
+                    <button class="btn btn-primary" onclick="navigateTo('${o.id}')">${t('nav_btn')}</button>
+                    <button class="btn btn-success" onclick="openGoogleMaps('${o.id}')">${t('open_gmaps')}</button>`);
             window.customerMarkers[o.id] = m;
         }
     });
@@ -641,8 +858,20 @@ function navigateToDriver(orderId) {
         lineOptions: { styles: [{ color: '#2563EB', weight: 5 }] }
     }).addTo(driverMap);
 }
+
+function openGoogleMaps(orderId) {
+    const o = driverOrders.find(x => x.id === orderId);
+    if (!o || !o.customerLat || !o.customerLng) return;
+    if (!window.currentLocation) {
+        alert('Please enable GPS first.');
+        return;
+    }
+    const origin = `${window.currentLocation.lat},${window.currentLocation.lng}`;
+    const dest = `${o.customerLat},${o.customerLng}`;
+    window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`, '_blank');
+}
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  MANAGER LOGIC
+//  MANAGER LOGIC (same as before, with minor i18n tweaks)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function initManager() {
     const unsub1 = onSnapshot(doc(db, "settings", "global"), (snap) => {
@@ -692,7 +921,9 @@ function initManager() {
 
     if (!managerMap) {
         managerMap = L.map('mMap').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, CartoDB' }).addTo(managerMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, CartoDB'
+        }).addTo(managerMap);
     }
 
     document.getElementById('localizeBtn').addEventListener('click', localizeCustomer);
@@ -763,7 +994,9 @@ async function localizeCustomer() {
     mapEl.style.display = 'block';
     if (!customerMap) {
         customerMap = L.map('customerMap').setView([35.6911, 0.6417], 12);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM, CartoDB' }).addTo(customerMap);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OSM, CartoDB'
+        }).addTo(customerMap);
     }
     document.getElementById('customerCoords').innerText = '🔍 Searching...';
     try {
@@ -819,7 +1052,7 @@ async function saveOrder() {
             driverName: driverDoc?.name || driverId,
             date: new Date().toISOString().slice(0,10),
             time: new Date().toLocaleTimeString(),
-            status: 'pending', // initial
+            status: 'pending',
             createdAt: serverTimestamp()
         };
         await addDoc(collection(db, "orders"), orderData);
@@ -899,14 +1132,19 @@ function renderOrders() {
         (o.customer + ' ' + (o.driverName || o.driver || '') + ' ' + (o.products?.map(p => p.name).join(' ') || ''))
         .toUpperCase().includes(filter)
     );
+    const statusMap = {
+        pending: { class: 'status-pending', label: t('status_pending') },
+        picked: { class: 'status-picked', label: t('status_picked') },
+        near: { class: 'status-near', label: t('status_near') },
+        delivered: { class: 'status-delivered', label: t('status_delivered') }
+    };
     tbody.innerHTML = filtered.map(o => {
-        const statusLabel = o.status === 'pending' ? '🛒 In Shop' : o.status === 'picked' ? '🚚 With Driver' : o.status === 'near' ? '📍 Near Client' : '✅ Delivered';
-        const statusClass = o.status === 'pending' ? 'status-pending' : o.status === 'picked' ? 'status-picked' : o.status === 'near' ? 'status-near' : 'status-delivered';
+        const st = statusMap[o.status] || statusMap.pending;
         return `<tr>
             <td>${o.id?.slice(0,5)||''}</td>
             <td>${o.customer||''}<br><small>${o.address||''}</small></td>
             <td>${o.driverName||o.driver||''}</td>
-            <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+            <td><span class="status-badge ${st.class}">${st.label}</span></td>
             <td>
                 <select id="reassign-${o.id}" style="width:auto;padding:4px;font-size:11px;">
                     ${driversCache.filter(d=>d.active!==false).map(d => `<option value="${d.id}" ${d.id===o.driverId?'selected':''}>${d.name}</option>`).join('')}
@@ -923,7 +1161,6 @@ function renderOrders() {
             try { await deleteDoc(doc(db, "orders", btn.dataset.id)); } catch (e) { alert(e.message); }
         });
     });
-    // Reassign function
     window.reassignOrder = async function(orderId) {
         const sel = document.getElementById('reassign-' + orderId);
         if (!sel) return;
@@ -942,7 +1179,8 @@ function renderOrders() {
         } catch (e) { alert(e.message); }
     };
 }
-    function renderSettlement() {
+
+function renderSettlement() {
     const bal = {};
     ordersCache.forEach(o => {
         const id = o.driverId || o.driver;
@@ -1012,9 +1250,15 @@ function renderAccounting() {
         return true;
     });
     const tbody = document.getElementById('acc-body');
+    const statusMap = {
+        pending: '🛒',
+        picked: '🚚',
+        near: '📍',
+        delivered: '✅'
+    };
     tbody.innerHTML = filtered.map(o => {
-        const statusLabel = o.status === 'pending' ? '🛒' : o.status === 'picked' ? '🚚' : o.status === 'near' ? '📍' : '✅';
-        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${statusLabel}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>`;
+        const icon = statusMap[o.status] || '❓';
+        return `<tr><td>${o.id?.slice(0,5)||''}</td><td>${o.customer||''}</td><td>${o.driverName||o.driver||''}</td><td>${icon}</td><td style="color:#F59E0B;">${o.yourIncome||0} DA</td><td>${o.date||''}</td></tr>`;
     }).join('') || '<tr><td colspan="6" style="color:#94A3B8;">No data</td></tr>';
 }
 
@@ -1026,7 +1270,6 @@ function updateMapMarkers() {
     }
     window.managerMarkers = {};
 
-    // Drivers with colored markers and labels
     Object.entries(locationsCache).forEach(([id, loc]) => {
         if (!loc.lat || !loc.lng) return;
         const driver = driversCache.find(d => d.id === id);
@@ -1043,7 +1286,6 @@ function updateMapMarkers() {
         window.managerMarkers['driver_' + id] = m;
     });
 
-    // Customers with driver color and label "Client of driver"
     ordersCache.forEach(o => {
         if (o.customerLat && o.customerLng && o.status !== 'delivered') {
             const driverId = o.driverId;
@@ -1080,14 +1322,12 @@ function updateMapDriversList() {
             <span>${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}</span>
         </div>`;
     });
-    // Also show customers with driver association
     ordersCache.filter(o => o.customerLat && o.status !== 'delivered').forEach(o => {
         const driver = driversCache.find(d => d.id === o.driverId);
         const label = driver ? `Client of ${driver.name}` : 'Client';
         html += `<div class="row"><span>📍 ${label} – ${o.customer}</span><span>${o.address||''}</span></div>`;
     });
     el.innerHTML = html || '<p style="color:#94A3B8;">No locations yet.</p>';
-    // Expose center function
     window.centerOnDriver = function(driverId) {
         const loc = locationsCache[driverId];
         if (loc && managerMap) {
@@ -1231,7 +1471,7 @@ loginPage.style.display = 'flex';
 appShell.style.display = 'none';
 document.getElementById('driverTabs').style.display = 'block';
 document.getElementById('managerTabs').classList.add('hidden');
-console.log('✅ LIVRILY upgraded with status, reassign, colored markers & routing.');
+console.log('✅ LIVRILY upgraded with multi‑language, notifications, & Google Maps routing.');
 </script>
 </body>
 </html>
