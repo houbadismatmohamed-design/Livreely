@@ -7,12 +7,10 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif}
         body{background:#0F172A;color:#F8FAFC;min-height:100vh}
-        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155}
+        header{background:#1E293B;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;border-bottom:1px solid #334155;flex-wrap:wrap;gap:8px}
         .logo{color:#38BDF8;font-weight:700;font-size:20px}
         .logo small{font-size:11px;background:#38BDF8;color:#0F172A;padding:2px 10px;border-radius:20px;margin-left:8px}
-        .container{max-width:1200px;margin:0 auto;padding:14px}
-        .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px;border:1px solid #334155}
-        .card h2{color:#38BDF8;font-size:15px;margin-bottom:10px}
+        .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
         .btn{padding:8px 16px;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;transition:.1s}
         .btn:active{transform:scale(.96)}
         .btn-primary{background:#2563EB;color:#fff}.btn-primary:hover{background:#1D4ED8}
@@ -20,6 +18,9 @@
         .btn-danger{background:#DC2626;color:#fff}.btn-danger:hover{background:#B91C1C}
         .btn-warning{background:#F59E0B;color:#0F172A}.btn-warning:hover{background:#D97706}
         .btn-outline{background:transparent;border:1px solid #475569;color:#CBD5E1}.btn-outline:hover{background:#334155}
+        .container{max-width:1200px;margin:0 auto;padding:14px}
+        .card{background:#1E293B;padding:16px;border-radius:16px;margin-bottom:14px;border:1px solid #334155}
+        .card h2{color:#38BDF8;font-size:15px;margin-bottom:10px}
         .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
         .product-card{background:#0F172A;border-radius:12px;padding:12px;border:1px solid #334155;text-align:center}
         .product-card .price{color:#F59E0B;font-size:18px;font-weight:700}
@@ -31,45 +32,81 @@
         .total-row{display:flex;justify-content:space-between;padding:10px 0;font-weight:700;font-size:16px}
         .badge{background:#2563EB;padding:2px 10px;border-radius:20px;font-size:11px;color:#fff}
         .hidden{display:none}
-        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #38BDF8;padding:12px 24px;border-radius:12px;color:#F8FAFC;font-weight:600;z-index:9999;display:none}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #38BDF8;padding:12px 24px;border-radius:12px;color:#F8FAFC;font-weight:600;z-index:9999;display:none;max-width:90%}
         .toast.show{display:block}
+        .order-status{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block}
+        .status-pending{background:#F59E0B;color:#0F172A}
+        .status-picked{background:#3B82F6;color:#fff}
+        .status-near{background:#8B5CF6;color:#fff}
+        .status-delivered{background:#22C55E;color:#0F172A}
+        .status-accepted{background:#2563EB;color:#fff}
+        .status-rejected{background:#DC2626;color:#fff}
+        .order-card{background:#0F172A;padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid #334155}
+        .order-card .row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #2D3748}
+        .order-card .row:last-child{border-bottom:none}
+        .tab{display:none}.tab.active{display:block}
+        .tab-buttons{display:flex;gap:8px;margin-bottom:14px}
+        .tab-buttons button{padding:8px 16px;border-radius:10px;border:none;font-weight:600;cursor:pointer;background:#1E293B;color:#94A3B8}
+        .tab-buttons button.active{background:#2563EB;color:#fff}
         @media(max-width:600px){.product-grid{grid-template-columns:repeat(2,1fr)}}
     </style>
 </head>
 <body>
     <header>
         <div class="logo">🛒 LIVRILY <small>Shop</small></div>
-        <div style="display:flex;gap:12px;align-items:center;">
+        <div class="header-actions">
             <span id="cartCount" class="badge">0</span>
             <button class="btn btn-primary" id="viewCartBtn">🛍️ Cart</button>
+            <button class="btn btn-outline" id="trackOrdersBtn">📦 Track</button>
         </div>
     </header>
 
     <div class="container">
-        <!-- Product List -->
-        <div id="productList" class="card">
-            <h2>📦 Products</h2>
-            <div id="productsGrid" class="product-grid"></div>
+        <!-- Tab buttons -->
+        <div class="tab-buttons">
+            <button class="active" data-tab="shop">🛒 Shop</button>
+            <button data-tab="track">📦 Track Orders</button>
         </div>
 
-        <!-- Cart -->
-        <div id="cartSection" class="card hidden">
-            <h2>🛒 Your Cart</h2>
-            <div id="cartItems"></div>
-            <div class="total-row"><span>Total</span><span id="cartTotal">0 DA</span></div>
-            <button class="btn btn-success" id="checkoutBtn" style="width:100%;margin-top:10px;">Proceed to Checkout</button>
-            <button class="btn btn-outline" id="closeCartBtn" style="width:100%;margin-top:6px;">Close Cart</button>
+        <!-- Shop Tab -->
+        <div id="tab-shop" class="tab active">
+            <div id="productList" class="card">
+                <h2>📦 Products</h2>
+                <div id="productsGrid" class="product-grid"></div>
+            </div>
+
+            <!-- Cart -->
+            <div id="cartSection" class="card hidden">
+                <h2>🛒 Your Cart</h2>
+                <div id="cartItems"></div>
+                <div class="total-row"><span>Total</span><span id="cartTotal">0 DA</span></div>
+                <button class="btn btn-success" id="checkoutBtn" style="width:100%;margin-top:10px;">Proceed to Checkout</button>
+                <button class="btn btn-outline" id="closeCartBtn" style="width:100%;margin-top:6px;">Close Cart</button>
+            </div>
+
+            <!-- Checkout Form -->
+            <div id="checkoutForm" class="card hidden">
+                <h2>📋 Delivery Details</h2>
+                <label>Full Name</label><input id="clientName" placeholder="Your name" />
+                <label>Phone</label><input id="clientPhone" placeholder="0550XXXXXX" />
+                <label>Address</label><textarea id="clientAddress" placeholder="Delivery address"></textarea>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn btn-success" id="placeOrderBtn">✅ Place Order</button>
+                    <button class="btn btn-danger" id="cancelCheckoutBtn">Cancel</button>
+                </div>
+            </div>
         </div>
 
-        <!-- Checkout Form -->
-        <div id="checkoutForm" class="card hidden">
-            <h2>📋 Delivery Details</h2>
-            <label>Full Name</label><input id="clientName" placeholder="Your name" />
-            <label>Phone</label><input id="clientPhone" placeholder="0550XXXXXX" />
-            <label>Address</label><textarea id="clientAddress" placeholder="Delivery address"></textarea>
-            <div style="display:flex;gap:8px;margin-top:12px;">
-                <button class="btn btn-success" id="placeOrderBtn">✅ Place Order</button>
-                <button class="btn btn-danger" id="cancelCheckoutBtn">Cancel</button>
+        <!-- Track Orders Tab -->
+        <div id="tab-track" class="tab">
+            <div class="card">
+                <h2>📦 Track Your Orders</h2>
+                <p style="color:#94A3B8;font-size:13px;margin-bottom:10px;">Enter your phone number to see all your orders and their status.</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <input id="trackPhone" placeholder="Phone number (e.g. 0550XXXXXX)" style="flex:1;min-width:200px;" />
+                    <button class="btn btn-primary" id="trackBtn">🔍 Track</button>
+                </div>
+                <div id="trackResults" style="margin-top:14px;"></div>
             </div>
         </div>
     </div>
@@ -82,7 +119,7 @@
         //  FIREBASE IMPORTS
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const config = {
             apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
@@ -102,6 +139,7 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         let products = [];
         let cart = [];
+        let ordersCache = [];
 
         // DOM refs
         const productsGrid = document.getElementById('productsGrid');
@@ -111,6 +149,7 @@
         const cartSection = document.getElementById('cartSection');
         const checkoutForm = document.getElementById('checkoutForm');
         const toast = document.getElementById('toast');
+        const trackResults = document.getElementById('trackResults');
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         //  TOAST
@@ -129,7 +168,6 @@
         onSnapshot(collection(db, "products"), (snap) => {
             products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderProducts();
-            console.log('Products loaded:', products);
         });
 
         function renderProducts() {
@@ -207,7 +245,6 @@
             if (!name || !phone || !address) { showToast('❌ Fill all fields'); return; }
             if (cart.length === 0) { showToast('❌ Cart empty'); return; }
 
-            // Get shopId from first product
             const firstProduct = products.find(p => p.id === cart[0].productId);
             if (!firstProduct) { showToast('❌ Product not found'); return; }
             const shopId = firstProduct.shopId;
@@ -230,7 +267,6 @@
                     status: 'pending',
                     createdAt: serverTimestamp()
                 });
-                console.log('Order placed with shopId:', shopId);
                 showToast('✅ Order placed! Shop owner will confirm.');
                 // Clear cart and form
                 cart = [];
@@ -245,6 +281,90 @@
                 console.error(e);
             }
         });
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TRACK ORDERS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        let ordersUnsubscribe = null;
+
+        document.getElementById('trackBtn').addEventListener('click', async () => {
+            const phone = document.getElementById('trackPhone').value.trim();
+            if (!phone) { showToast('❌ Enter your phone number'); return; }
+
+            // Clean up previous listener
+            if (ordersUnsubscribe) {
+                ordersUnsubscribe();
+                ordersUnsubscribe = null;
+            }
+
+            // Query orders from 'orders' collection by phone
+            const q = query(collection(db, "orders"), where("phone", "==", phone));
+            ordersUnsubscribe = onSnapshot(q, (snap) => {
+                const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderTrackResults(orders, phone);
+            }, (error) => {
+                showToast('❌ Error: ' + error.message);
+            });
+        });
+
+        function renderTrackResults(orders, phone) {
+            if (!trackResults) return;
+            if (orders.length === 0) {
+                trackResults.innerHTML = `<p style="color:#94A3B8;">No orders found for phone number <strong>${phone}</strong>. Try again or place your first order!</p>`;
+                return;
+            }
+
+            const statusMap = {
+                'pending': { label: '🛒 In Shop', class: 'status-pending' },
+                'accepted': { label: '✅ Accepted by Shop', class: 'status-accepted' },
+                'rejected': { label: '❌ Rejected', class: 'status-rejected' },
+                'picked': { label: '🚚 With Driver', class: 'status-picked' },
+                'near': { label: '📍 Near You', class: 'status-near' },
+                'delivered': { label: '✅ Delivered', class: 'status-delivered' },
+                'assigned': { label: '🚗 Assigned to Driver', class: 'status-picked' }
+            };
+
+            trackResults.innerHTML = orders.map(o => {
+                const status = o.status || 'pending';
+                const info = statusMap[status] || statusMap.pending;
+                const driverName = o.driverName || 'Not assigned yet';
+                const items = (o.products || []).map(p => `${p.name} x${p.qty}`).join(', ') || 'No items';
+                const date = o.date || '';
+                return `
+                    <div class="order-card">
+                        <div class="row"><span>📦 Order #${o.id.slice(0,6)}</span><span>${date}</span></div>
+                        <div class="row"><span>👤 ${o.customer}</span><span>📞 ${o.phone}</span></div>
+                        <div class="row"><span>📦 ${items}</span><span>💰 ${o.clientTotal || 0} DA</span></div>
+                        <div class="row"><span>📍 ${o.address || 'No address'}</span></div>
+                        <div class="row" style="border-bottom:none;margin-top:4px;">
+                            <span>Status: <span class="order-status ${info.class}">${info.label}</span></span>
+                            <span>🚗 ${driverName}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TABS
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        document.querySelectorAll('.tab-buttons button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  TRACK ORDERS BUTTON – open track tab
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        document.getElementById('trackOrdersBtn').addEventListener('click', () => {
+            document.querySelector('.tab-buttons button[data-tab="track"]').click();
+        });
+
+        console.log('✅ Client app with order tracking ready.');
     </script>
 </body>
 </html>
