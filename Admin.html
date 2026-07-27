@@ -47,6 +47,7 @@
     @media(max-width:900px){.sidebar{width:56px;padding:8px}.sidebar button span{display:none}.sidebar button i{margin-right:0}.grid-2{grid-template-columns:1fr}}
     [dir="rtl"] .sidebar button i{margin-right:0;margin-left:10px}
     [dir="rtl"] .sidebar button{text-align:right}
+    [dir="rtl"] .header-actions .lang-btn{margin-left:4px;margin-right:0}
   </style>
 </head>
 <body>
@@ -162,11 +163,322 @@
     </div>
   </div>
   <div id="toast" class="toast"></div>
+
   <script type="module">
-    // ... (Full Admin logic with I18N)
-    // We'll keep the same logic as before, but add I18N and language switcher.
-    // For brevity, I'll show the I18N part and the logout button handler.
-    // The full code is attached in the final zip.
+    import { initializeApp, getApps, getApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, where, getDocs, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    const config = {
+      apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+      authDomain: "livrily-a6e7e.firebaseapp.com",
+      projectId: "livrily-a6e7e",
+      storageBucket: "livrily-a6e7e.firebasestorage.app",
+      messagingSenderId: "904979289112",
+      appId: "1:904979289112:web:9981377a9500b940091f6d"
+    };
+    let app; try { app = getApps().length ? getApp() : initializeApp(config); } catch (_) { app = initializeApp(config); }
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const ADMIN_UID = "69rlujJgE6X8osQj5MjlhA3BrV43";
+    const ADMIN_EMAIL = "houbadismatmohamed@gmail.com";
+    let managers=[], drivers=[], shopOwners=[], shops=[], orders=[], shopOrders=[];
+    let toastTimer; function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); if(toastTimer) clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),4000); }
+
+    // --- I18N ---
+    const i18n = {
+      en: {
+        adminLabel: "Admin", logout: "Logout",
+        dashboard: "Dashboard", managers: "Managers", drivers: "Drivers", shopOwners: "Shop Owners", shops: "Shops", orders: "Orders", settings: "Settings",
+        totalOrders: "Total Delivery Orders", driversLabel: "Drivers", shopsLabel: "Shops", managersLabel: "Managers", revenue: "Revenue", recentOrders: "📋 Recent Delivery Orders",
+        manageManagers: "Manage Managers (Created by Admin only)", name: "Name", email: "Email", password: "Password (min 6 chars)", addManager: "Add Manager", cancel: "Cancel", managersList: "📋 Managers List",
+        manageDrivers: "Manage Drivers", phone: "Phone", vehicle: "Vehicle", addDriver: "Add Driver", driversList: "📋 Drivers List",
+        manageShopOwners: "Manage Shop Owners", shopName: "Shop Name", ownerEmail: "Owner Email", address: "Address", addShopOwner: "Add Shop Owner", shopOwnersList: "📋 Shop Owners List",
+        allShops: "🏪 All Shops", allProducts: "📦 All Products (Global)", deliveryOrders: "📦 Delivery Orders (Manager flow)", shopOrders: "🛒 Shop Orders (Client → Shop)",
+        generalSettings: "⚙ General Settings", appName: "App Name", logoURL: "Logo URL", feeSettings: "💰 Fee Settings", clientFee: "Client Fee / product (DA)", driverAppFee: "Driver App Fee (DA)", managerFeeType: "Manager Fee Type", fixedFee: "Fixed Fee (DA)", managerPct: "Manager Percentage (%)", defaultDeliveryPrice: "Default Delivery Price", dangerZone: "🔥 Danger Zone", resetData: "Reset All Data (irreversible)", saveSettings: "Save All Settings"
+      },
+      fr: {
+        adminLabel: "Admin", logout: "Déconnexion",
+        dashboard: "Tableau de bord", managers: "Gestionnaires", drivers: "Chauffeurs", shopOwners: "Propriétaires de boutique", shops: "Boutiques", orders: "Commandes", settings: "Paramètres",
+        totalOrders: "Total des commandes de livraison", driversLabel: "Chauffeurs", shopsLabel: "Boutiques", managersLabel: "Gestionnaires", revenue: "Revenu", recentOrders: "📋 Commandes récentes",
+        manageManagers: "Gérer les gestionnaires (créés par l'Admin)", name: "Nom", email: "E-mail", password: "Mot de passe (min 6 caractères)", addManager: "Ajouter un gestionnaire", cancel: "Annuler", managersList: "📋 Liste des gestionnaires",
+        manageDrivers: "Gérer les chauffeurs", phone: "Téléphone", vehicle: "Véhicule", addDriver: "Ajouter un chauffeur", driversList: "📋 Liste des chauffeurs",
+        manageShopOwners: "Gérer les propriétaires de boutique", shopName: "Nom de la boutique", ownerEmail: "E-mail du propriétaire", address: "Adresse", addShopOwner: "Ajouter un propriétaire", shopOwnersList: "📋 Liste des propriétaires",
+        allShops: "🏪 Toutes les boutiques", allProducts: "📦 Tous les produits (global)", deliveryOrders: "📦 Commandes de livraison (flux gestionnaire)", shopOrders: "🛒 Commandes boutique (Client → Boutique)",
+        generalSettings: "⚙ Paramètres généraux", appName: "Nom de l'application", logoURL: "URL du logo", feeSettings: "💰 Paramètres de frais", clientFee: "Frais client / produit (DA)", driverAppFee: "Frais application chauffeur (DA)", managerFeeType: "Type de frais gestionnaire", fixedFee: "Frais fixes (DA)", managerPct: "Pourcentage gestionnaire (%)", defaultDeliveryPrice: "Prix de livraison par défaut", dangerZone: "🔥 Zone de danger", resetData: "Réinitialiser toutes les données (irréversible)", saveSettings: "Enregistrer tous les paramètres"
+      },
+      ar: {
+        adminLabel: "مدير", logout: "تسجيل الخروج",
+        dashboard: "لوحة التحكم", managers: "المديرين", drivers: "السائقين", shopOwners: "أصحاب المتاجر", shops: "المتاجر", orders: "الطلبات", settings: "الإعدادات",
+        totalOrders: "إجمالي طلبات التوصيل", driversLabel: "السائقين", shopsLabel: "المتاجر", managersLabel: "المديرين", revenue: "الإيرادات", recentOrders: "📋 أحدث طلبات التوصيل",
+        manageManagers: "إدارة المديرين (ينشئهم المدير فقط)", name: "الاسم", email: "البريد الإلكتروني", password: "كلمة المرور (6 أحرف على الأقل)", addManager: "إضافة مدير", cancel: "إلغاء", managersList: "📋 قائمة المديرين",
+        manageDrivers: "إدارة السائقين", phone: "الهاتف", vehicle: "المركبة", addDriver: "إضافة سائق", driversList: "📋 قائمة السائقين",
+        manageShopOwners: "إدارة أصحاب المتاجر", shopName: "اسم المتجر", ownerEmail: "بريد المالك", address: "العنوان", addShopOwner: "إضافة مالك متجر", shopOwnersList: "📋 قائمة أصحاب المتاجر",
+        allShops: "🏪 جميع المتاجر", allProducts: "📦 جميع المنتجات (عامة)", deliveryOrders: "📦 طلبات التوصيل (سير المدير)", shopOrders: "🛒 طلبات المتجر (العميل → المتجر)",
+        generalSettings: "⚙ الإعدادات العامة", appName: "اسم التطبيق", logoURL: "رابط الشعار", feeSettings: "💰 إعدادات الرسوم", clientFee: "رسوم العميل / منتج (DA)", driverAppFee: "رسوم تطبيق السائق (DA)", managerFeeType: "نوع رسوم المدير", fixedFee: "رسوم ثابتة (DA)", managerPct: "نسبة المدير (%)", defaultDeliveryPrice: "سعر التوصيل الافتراضي", dangerZone: "🔥 منطقة الخطر", resetData: "إعادة تعيين جميع البيانات (غير قابل للتراجع)", saveSettings: "حفظ جميع الإعدادات"
+      },
+      dz: {
+        adminLabel: "مدير", logout: "خرج",
+        dashboard: "التابلو", managers: "المديرين", drivers: "السواقين", shopOwners: "أصحاب الحوانت", shops: "الحوانت", orders: "الطلبات", settings: "الإعدادات",
+        totalOrders: "مجموع طلبات التوصيل", driversLabel: "السواقين", shopsLabel: "الحوانت", managersLabel: "المديرين", revenue: "الدخل", recentOrders: "📋 آخر الطلبات",
+        manageManagers: "تسيير المديرين (يتصنعو غير من عند المدير)", name: "السمية", email: "الإيميل", password: "كلمة السر (6 حروف على الأقل)", addManager: "زيد مدير", cancel: "الغي", managersList: "📋 قايمة المديرين",
+        manageDrivers: "تسيير السواقين", phone: "التليفون", vehicle: "السيارة", addDriver: "زيد سواق", driversList: "📋 قايمة السواقين",
+        manageShopOwners: "تسيير أصحاب الحوانت", shopName: "سمية الحانوت", ownerEmail: "إيميل المالك", address: "العنوان", addShopOwner: "زيد مالك حانوت", shopOwnersList: "📋 قايمة أصحاب الحوانت",
+        allShops: "🏪 كل الحوانت", allProducts: "📦 كل المنتجات (عامة)", deliveryOrders: "📦 طلبات التوصيل (سير المدير)", shopOrders: "🛒 طلبات الحانوت (العميل → الحانوت)",
+        generalSettings: "⚙ الإعدادات العامة", appName: "سمية التطبيق", logoURL: "رابط الشعار", feeSettings: "💰 إعدادات الرسوم", clientFee: "رسوم العميل / منتج (DA)", driverAppFee: "رسوم تطبيق السواق (DA)", managerFeeType: "نوع رسوم المدير", fixedFee: "رسوم ثابتة (DA)", managerPct: "نسبة المدير (%)", defaultDeliveryPrice: "سعر التوصيل الافتراضي", dangerZone: "🔥 منطقة الخطر", resetData: "ارجاع كل البيانات (مايتعوضش)", saveSettings: "سجل كل الإعدادات"
+      }
+    };
+    let currentLang = localStorage.getItem('livrily-lang') || 'en';
+    function applyLang(lang){
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if(i18n[lang] && i18n[lang][key] !== undefined) el.textContent = i18n[lang][key];
+        else if(i18n['en'][key] !== undefined) el.textContent = i18n['en'][key];
+      });
+      document.documentElement.dir = (lang === 'ar' || lang === 'dz') ? 'rtl' : 'ltr';
+      localStorage.setItem('livrily-lang', lang);
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    }
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+    });
+    applyLang(currentLang);
+
+    // --- Auth ---
+    onAuthStateChanged(auth, async (user)=>{
+      if(!user || (user.uid!==ADMIN_UID && user.email!==ADMIN_EMAIL)){ showLogin(); return; }
+      document.getElementById('adminEmail').textContent=user.email;
+      document.getElementById('loginOverlay')?.remove();
+      initAdmin();
+    });
+
+    function showLogin(){
+      if(document.getElementById('loginOverlay')) return;
+      const overlay=document.createElement('div');
+      overlay.id='loginOverlay';
+      overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;justify-content:center;align-items:center;z-index:9999;';
+      overlay.innerHTML=`
+        <div style="background:rgba(30,41,59,0.95);padding:40px;border-radius:20px;max-width:400px;width:90%;border:1px solid rgba(56,189,248,0.2);">
+          <h2 style="color:#38BDF8;margin-bottom:8px;">👑 Admin Login</h2>
+          <p style="color:#94A3B8;font-size:13px;margin-bottom:20px;">Super Admin access only</p>
+          <input id="adminEmailInput" placeholder="Email" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(56,189,248,0.2);background:rgba(15,23,42,0.8);color:#F8FAFC;margin-bottom:10px;outline:none;" />
+          <input id="adminPasswordInput" type="password" placeholder="Password" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(56,189,248,0.2);background:rgba(15,23,42,0.8);color:#F8FAFC;margin-bottom:10px;outline:none;" />
+          <button id="adminLoginBtn" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#2563EB,#38BDF8);color:#fff;font-weight:600;cursor:pointer;">Login</button>
+          <p id="loginError" style="color:#F87171;font-size:12px;margin-top:8px;text-align:center;"></p>
+        </div>`;
+      document.body.prepend(overlay);
+      document.getElementById('adminLoginBtn').addEventListener('click', async ()=>{
+        const email=document.getElementById('adminEmailInput').value.trim();
+        const pass=document.getElementById('adminPasswordInput').value;
+        if(!email||!pass){ document.getElementById('loginError').textContent='Enter email and password'; return; }
+        try{ await signInWithEmailAndPassword(auth,email,pass); }catch(e){ document.getElementById('loginError').textContent=e.message; }
+      });
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async ()=>{ await signOut(auth); location.reload(); });
+
+    let unsubscribers=[];
+    function initAdmin(){
+      unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+      onSnapshot(doc(db,"settings","global"), (snap)=>{
+        if(snap.exists()){
+          const d=snap.data();
+          document.getElementById('setAppName').value=d.appName||'LIVRILY';
+          document.getElementById('setLogo').value=d.logo||'';
+          document.getElementById('setClientFee').value=d.clientFeePerProduct||10;
+          document.getElementById('setDriverAppFee').value=d.driverAppFee||10;
+          document.getElementById('setFeeType').value=d.feeType||'percentage';
+          document.getElementById('setFixedFee').value=d.fixedFee||100;
+          document.getElementById('setManagerPct').value=d.managerFeePercent||40;
+          document.getElementById('setDeliveryPrice').value=d.defaultDeliveryPrice||300;
+          toggleFeeFields(d.feeType||'percentage');
+        }
+      });
+      unsubscribers.push(onSnapshot(query(collection(db,"users"), where("role","==","manager")), (snap)=>{ managers=snap.docs.map(d=>({id:d.id,...d.data()})); renderManagers(); updateStats(); }));
+      unsubscribers.push(onSnapshot(query(collection(db,"users"), where("role","==","driver")), (snap)=>{ drivers=snap.docs.map(d=>({id:d.id,...d.data()})); renderDrivers(); updateStats(); }));
+      unsubscribers.push(onSnapshot(query(collection(db,"users"), where("role","==","shopOwner")), (snap)=>{ shopOwners=snap.docs.map(d=>({id:d.id,...d.data()})); renderShopOwners(); updateStats(); }));
+      unsubscribers.push(onSnapshot(collection(db,"shops"), (snap)=>{ shops=snap.docs.map(d=>({id:d.id,...d.data()})); renderShops(); updateStats(); }));
+      unsubscribers.push(onSnapshot(query(collection(db,"orders"), orderBy("createdAt","desc")), (snap)=>{ orders=snap.docs.map(d=>({id:d.id,...d.data()})); renderAllOrders(); renderRecentOrders(); updateStats(); }));
+      unsubscribers.push(onSnapshot(query(collection(db,"shopOrders"), orderBy("createdAt","desc")), (snap)=>{ shopOrders=snap.docs.map(d=>({id:d.id,...d.data()})); renderShopOrders(); updateStats(); }));
+      unsubscribers.push(onSnapshot(collection(db,"products"), (snap)=>{ renderProductsList(snap.docs.map(d=>({id:d.id,...d.data()}))); }));
+      document.querySelectorAll('.sidebar button').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+          document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        });
+      });
+      document.getElementById('saveManagerBtn').addEventListener('click', saveManager);
+      document.getElementById('cancelManagerBtn').addEventListener('click', cancelEditManager);
+      document.getElementById('saveDriverBtn').addEventListener('click', saveDriver);
+      document.getElementById('cancelDriverBtn').addEventListener('click', cancelEditDriver);
+      document.getElementById('saveShopBtn').addEventListener('click', saveShopOwner);
+      document.getElementById('cancelShopBtn').addEventListener('click', cancelEditShop);
+      document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+      document.getElementById('resetAppBtn').addEventListener('click', resetApp);
+      document.getElementById('setFeeType').addEventListener('change', (e)=>toggleFeeFields(e.target.value));
+    }
+
+    function toggleFeeFields(type){ document.getElementById('fixedFeeDiv').style.display=type==='fixed'?'block':'none'; document.getElementById('pctFeeDiv').style.display=type==='percentage'?'block':'none'; }
+    function updateStats(){
+      document.getElementById('statOrders').textContent=orders.length;
+      document.getElementById('statDrivers').textContent=drivers.length;
+      document.getElementById('statShops').textContent=shops.length;
+      document.getElementById('statManagers').textContent=managers.length;
+      const revenue=orders.reduce((s,o)=>s+(o.clientTotal||0),0);
+      document.getElementById('statRevenue').textContent=revenue+' DA';
+    }
+    function renderManagers(){
+      const el=document.getElementById('managersList');
+      el.innerHTML=managers.map(m=>`<div class="row"><span><strong>${m.name}</strong> <span style="color:#94A3B8;font-size:11px;">${m.email}</span></span><span><button class="btn btn-warning btn-sm" onclick="editManager('${m.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteManager('${m.id}')"><i class="fas fa-trash"></i></button></span></div>`).join('')||'<p style="color:#94A3B8;">No managers</p>';
+    }
+    window.editManager=(id)=>{
+      const m=managers.find(x=>x.id===id); if(!m) return;
+      document.getElementById('mgrName').value=m.name; document.getElementById('mgrEmail').value=m.email; document.getElementById('mgrPassword').value='';
+      const btn=document.getElementById('saveManagerBtn'); btn.innerHTML='<i class="fas fa-save"></i> <span data-i18n="updateManager">Update Manager</span>'; btn.dataset.editId=id;
+      document.getElementById('cancelManagerBtn').style.display='inline-block';
+    };
+    window.deleteManager=async (id)=>{ if(!confirm('Delete manager?')) return; try{ await deleteDoc(doc(db,"users",id)); showToast('✅ Manager deleted'); }catch(e){ showToast('❌ '+e.message); } };
+    function renderDrivers(){
+      const el=document.getElementById('driversList');
+      el.innerHTML=drivers.map(d=>`<div class="row"><span><strong>${d.name}</strong> <span style="color:#94A3B8;font-size:11px;">${d.email}</span> ${d.active!==false?'<span class="badge badge-green">Active</span>':'<span class="badge badge-red">Inactive</span>'}</span><span><button class="btn btn-warning btn-sm" onclick="editDriver('${d.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteDriver('${d.id}')"><i class="fas fa-trash"></i></button></span></div>`).join('')||'<p style="color:#94A3B8;">No drivers</p>';
+    }
+    window.editDriver=(id)=>{
+      const d=drivers.find(x=>x.id===id); if(!d) return;
+      document.getElementById('drvName').value=d.name; document.getElementById('drvEmail').value=d.email; document.getElementById('drvPhone').value=d.phone||''; document.getElementById('drvVehicle').value=d.vehicle||''; document.getElementById('drvPassword').value='';
+      const btn=document.getElementById('saveDriverBtn'); btn.innerHTML='<i class="fas fa-save"></i> <span data-i18n="updateDriver">Update Driver</span>'; btn.dataset.editId=id;
+      document.getElementById('cancelDriverBtn').style.display='inline-block';
+    };
+    window.deleteDriver=async (id)=>{ if(!confirm('Delete driver?')) return; try{ await deleteDoc(doc(db,"users",id)); await deleteDoc(doc(db,"drivers",id)).catch(()=>{}); await deleteDoc(doc(db,"locations",id)).catch(()=>{}); showToast('✅ Driver deleted'); }catch(e){ showToast('❌ '+e.message); } };
+    function renderShopOwners(){
+      const el=document.getElementById('shopOwnersList');
+      el.innerHTML=shopOwners.map(s=>`<div class="row"><span><strong>${s.shopName||s.name}</strong> <span style="color:#94A3B8;font-size:11px;">${s.email}</span></span><span><button class="btn btn-warning btn-sm" onclick="editShopOwner('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteShopOwner('${s.id}')"><i class="fas fa-trash"></i></button></span></div>`).join('')||'<p style="color:#94A3B8;">No shop owners</p>';
+    }
+    window.editShopOwner=(id)=>{
+      const s=shopOwners.find(x=>x.id===id); if(!s) return;
+      document.getElementById('shopName').value=s.shopName||s.name||''; document.getElementById('shopEmail').value=s.email; document.getElementById('shopPhone').value=s.phone||''; document.getElementById('shopAddress').value=s.address||''; document.getElementById('shopPassword').value='';
+      const btn=document.getElementById('saveShopBtn'); btn.innerHTML='<i class="fas fa-save"></i> <span data-i18n="updateShopOwner">Update Shop Owner</span>'; btn.dataset.editId=id;
+      document.getElementById('cancelShopBtn').style.display='inline-block';
+    };
+    window.deleteShopOwner=async (id)=>{ if(!confirm('Delete shop owner and their shop?')) return; try{ await deleteDoc(doc(db,"users",id)); await deleteDoc(doc(db,"shops",id)).catch(()=>{}); showToast('✅ Shop owner deleted'); }catch(e){ showToast('❌ '+e.message); } };
+    function renderShops(){ const el=document.getElementById('shopsList'); el.innerHTML=shops.map(s=>`<div class="row"><span><strong>${s.name||'Unnamed'}</strong> <span style="color:#94A3B8;font-size:11px;">${s.email||''}</span></span><span>${s.phone||''}</span></div>`).join('')||'<p style="color:#94A3B8;">No shops</p>'; }
+    function renderAllOrders(){ const el=document.getElementById('allOrdersList'); el.innerHTML=orders.slice(0,30).map(o=>`<div class="row"><span>#${o.id.slice(0,6)} ${o.customer}</span><span>${o.driverName||'Unassigned'}</span><span>${o.status}</span><span>${o.clientTotal||0} DA</span></div>`).join('')||'<p style="color:#94A3B8;">No orders</p>'; }
+    function renderShopOrders(){ const el=document.getElementById('shopOrdersList'); el.innerHTML=shopOrders.slice(0,30).map(o=>`<div class="row"><span>#${o.id.slice(0,6)} ${o.clientName}</span><span>${o.status}</span><span>${o.total||0} DA</span></div>`).join('')||'<p style="color:#94A3B8;">No shop orders</p>'; }
+    function renderRecentOrders(){ const el=document.getElementById('recentOrders'); el.innerHTML=orders.slice(0,5).map(o=>`<div class="row"><span>${o.customer}</span><span>${o.driverName||'Pending'}</span><span>${o.status}</span><span>${o.clientTotal||0} DA</span></div>`).join('')||'<p style="color:#94A3B8;">No orders</p>'; }
+    function renderProductsList(products){ const el=document.getElementById('productsList'); el.innerHTML=products.map(p=>`<div class="row"><span>${p.name}</span><span>${p.price} DA</span><span>Qty: ${p.qty}</span><span style="font-size:10px;color:#94A3B8;">${p.shopId||'?'}</span></div>`).join('')||'<p style="color:#94A3B8;">No products</p>'; }
+
+    async function createUserSafe(email,password){
+      const secondaryName='Secondary_'+Date.now();
+      const secondaryApp=initializeApp(config, secondaryName);
+      const secondaryAuth=getAuth(secondaryApp);
+      try{
+        const cred=await createUserWithEmailAndPassword(secondaryAuth,email,password);
+        return cred.user;
+      } finally {
+        try{ await deleteApp(secondaryApp); }catch(e){}
+      }
+    }
+
+    async function saveManager(){
+      const name=document.getElementById('mgrName').value.trim();
+      const email=document.getElementById('mgrEmail').value.trim();
+      const password=document.getElementById('mgrPassword').value;
+      if(!name||!email){ showToast('❌ Name and email required'); return; }
+      const btn=document.getElementById('saveManagerBtn'); const editId=btn.dataset.editId;
+      try{
+        if(editId){
+          await updateDoc(doc(db,"users",editId),{name,email,updatedAt:serverTimestamp()});
+          showToast('✅ Manager updated'); cancelEditManager();
+        }else{
+          if(!password||password.length<6){ showToast('❌ Password min 6 chars'); return; }
+          const user=await createUserSafe(email,password);
+          await setDoc(doc(db,"users",user.uid),{uid:user.uid,name,email,role:'manager',createdAt:serverTimestamp()});
+          showToast('✅ Manager created'); document.getElementById('mgrName').value=''; document.getElementById('mgrEmail').value=''; document.getElementById('mgrPassword').value='';
+        }
+      }catch(e){ showToast('❌ '+e.message); }
+    }
+    function cancelEditManager(){ const b=document.getElementById('saveManagerBtn'); b.innerHTML='<i class="fas fa-plus"></i> <span data-i18n="addManager">Add Manager</span>'; delete b.dataset.editId; document.getElementById('cancelManagerBtn').style.display='none'; document.getElementById('mgrName').value=''; document.getElementById('mgrEmail').value=''; document.getElementById('mgrPassword').value=''; }
+    async function saveDriver(){
+      const name=document.getElementById('drvName').value.trim();
+      const email=document.getElementById('drvEmail').value.trim();
+      const phone=document.getElementById('drvPhone').value.trim();
+      const vehicle=document.getElementById('drvVehicle').value.trim();
+      const password=document.getElementById('drvPassword').value;
+      if(!name||!email){ showToast('❌ Name and email required'); return; }
+      const btn=document.getElementById('saveDriverBtn'); const editId=btn.dataset.editId;
+      try{
+        if(editId){
+          await updateDoc(doc(db,"users",editId),{name,email,phone,vehicle,updatedAt:serverTimestamp()});
+          await setDoc(doc(db,"drivers",editId),{name,email,phone,vehicle,active:true},{merge:true});
+          showToast('✅ Driver updated'); cancelEditDriver();
+        }else{
+          if(!password||password.length<6){ showToast('❌ Password min 6 chars'); return; }
+          const user=await createUserSafe(email,password);
+          await setDoc(doc(db,"users",user.uid),{uid:user.uid,name,email,phone,vehicle,role:'driver',createdAt:serverTimestamp()});
+          await setDoc(doc(db,"drivers",user.uid),{uid:user.uid,name,email,phone,vehicle,active:true,createdAt:serverTimestamp()});
+          showToast('✅ Driver created'); document.getElementById('drvName').value=''; document.getElementById('drvEmail').value=''; document.getElementById('drvPhone').value=''; document.getElementById('drvVehicle').value=''; document.getElementById('drvPassword').value='';
+        }
+      }catch(e){ showToast('❌ '+e.message); }
+    }
+    function cancelEditDriver(){ const b=document.getElementById('saveDriverBtn'); b.innerHTML='<i class="fas fa-plus"></i> <span data-i18n="addDriver">Add Driver</span>'; delete b.dataset.editId; document.getElementById('cancelDriverBtn').style.display='none'; document.getElementById('drvName').value=''; document.getElementById('drvEmail').value=''; document.getElementById('drvPhone').value=''; document.getElementById('drvVehicle').value=''; document.getElementById('drvPassword').value=''; }
+    async function saveShopOwner(){
+      const shopName=document.getElementById('shopName').value.trim();
+      const email=document.getElementById('shopEmail').value.trim();
+      const phone=document.getElementById('shopPhone').value.trim();
+      const address=document.getElementById('shopAddress').value.trim();
+      const password=document.getElementById('shopPassword').value;
+      if(!shopName||!email){ showToast('❌ Shop name and email required'); return; }
+      const btn=document.getElementById('saveShopBtn'); const editId=btn.dataset.editId;
+      try{
+        if(editId){
+          await updateDoc(doc(db,"users",editId),{name:shopName,shopName,email,phone,address,updatedAt:serverTimestamp()});
+          await setDoc(doc(db,"shops",editId),{name:shopName,email,phone,address,ownerId:editId},{merge:true});
+          showToast('✅ Shop owner updated'); cancelEditShop();
+        }else{
+          if(!password||password.length<6){ showToast('❌ Password min 6 chars'); return; }
+          const user=await createUserSafe(email,password);
+          await setDoc(doc(db,"users",user.uid),{uid:user.uid,name:shopName,shopName,email,phone,address,role:'shopOwner',createdAt:serverTimestamp()});
+          await setDoc(doc(db,"shops",user.uid),{ownerId:user.uid,name:shopName,email,phone,address,createdAt:serverTimestamp()});
+          showToast('✅ Shop owner created'); document.getElementById('shopName').value=''; document.getElementById('shopEmail').value=''; document.getElementById('shopPhone').value=''; document.getElementById('shopAddress').value=''; document.getElementById('shopPassword').value='';
+        }
+      }catch(e){ showToast('❌ '+e.message); }
+    }
+    function cancelEditShop(){ const b=document.getElementById('saveShopBtn'); b.innerHTML='<i class="fas fa-plus"></i> <span data-i18n="addShopOwner">Add Shop Owner</span>'; delete b.dataset.editId; document.getElementById('cancelShopBtn').style.display='none'; document.getElementById('shopName').value=''; document.getElementById('shopEmail').value=''; document.getElementById('shopPhone').value=''; document.getElementById('shopAddress').value=''; document.getElementById('shopPassword').value=''; }
+    async function saveSettings(){
+      try{
+        const data={
+          appName:document.getElementById('setAppName').value,
+          logo:document.getElementById('setLogo').value,
+          clientFeePerProduct:parseFloat(document.getElementById('setClientFee').value)||0,
+          driverAppFee:parseFloat(document.getElementById('setDriverAppFee').value)||0,
+          feeType:document.getElementById('setFeeType').value,
+          fixedFee:parseFloat(document.getElementById('setFixedFee').value)||0,
+          managerFeePercent:parseFloat(document.getElementById('setManagerPct').value)||0,
+          defaultDeliveryPrice:parseFloat(document.getElementById('setDeliveryPrice').value)||0,
+          updatedAt:serverTimestamp()
+        };
+        await setDoc(doc(db,"settings","global"),data,{merge:true});
+        showToast('✅ Settings saved');
+      }catch(e){ showToast('❌ '+e.message); }
+    }
+    async function resetApp(){
+      if(!confirm('⚠ This will delete ALL orders, products, drivers locations, settlements. Users (managers/drivers/shopOwners) will also be deleted from Firestore but NOT from Auth. Are you sure?')) return;
+      if(!confirm('Final confirmation: Irreversible!')) return;
+      try{
+        const collections=['drivers','shops','products','orders','shopOrders','locations','settlements'];
+        for(const col of collections){
+          const snap=await getDocs(collection(db,col));
+          const batch=writeBatch(db);
+          snap.forEach(d=>batch.delete(d.ref));
+          await batch.commit();
+        }
+        const usersSnap=await getDocs(query(collection(db,"users"), where("role","!=","admin")));
+        const batch=writeBatch(db);
+        usersSnap.forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+        showToast('✅ Data cleared. Admin remains. You must delete Auth users manually in Firebase Console if needed.');
+      }catch(e){ showToast('❌ '+e.message); }
+    }
   </script>
 </body>
 </html>
