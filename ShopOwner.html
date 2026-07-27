@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIVRILY · Shop Owner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+    body{background:#0B1120;color:#F8FAFC;min-height:100vh}
+    header{background:rgba(11,17,32,0.95);backdrop-filter:blur(12px);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(56,189,248,0.1);position:sticky;top:0;z-index:1000}
+    .logo{font-size:22px;font-weight:800;color:#38BDF8}
+    nav{display:flex;gap:8px;flex-wrap:wrap;padding:12px 24px;background:rgba(15,23,42,0.8);border-bottom:1px solid rgba(56,189,248,0.05);position:sticky;top:60px;z-index:999}
+    nav button{padding:8px 16px;border:none;border-radius:8px;background:transparent;color:#94A3B8;font-weight:500;cursor:pointer;transition:.3s;font-size:12px}
+    nav button:hover{color:#F8FAFC;background:rgba(56,189,248,0.1)}
+    nav button.active{background:linear-gradient(135deg,#2563EB,#38BDF8);color:#fff}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .card{background:rgba(30,41,59,0.6);backdrop-filter:blur(8px);border:1px solid rgba(56,189,248,0.1);border-radius:16px;padding:18px;margin-bottom:16px}
+    .card h2{color:#38BDF8;font-size:15px;margin-bottom:12px}
+    .tab{display:none}.tab.active{display:block}
+    input,select,textarea{width:100%;padding:10px 14px;background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.15);border-radius:10px;color:#F8FAFC;font-size:13px;outline:none;transition:.3s;margin-top:4px}
+    input:focus{border-color:#38BDF8}
+    label{font-size:11px;color:#94A3B8;display:block;margin-top:10px;text-transform:uppercase}
+    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(56,189,248,0.05);font-size:12px;align-items:center;gap:8px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{background:rgba(56,189,248,0.15);padding:8px;color:#38BDF8;text-align:center}
+    td{padding:8px;border-bottom:1px solid rgba(56,189,248,0.05);text-align:center}
+    .btn{padding:6px 14px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:.3s;font-size:11px}
+    .btn-primary{background:linear-gradient(135deg,#2563EB,#38BDF8);color:#fff}
+    .btn-success{background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff}
+    .btn-danger{background:linear-gradient(135deg,#DC2626,#EF4444);color:#fff}
+    .btn-warning{background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#0B1120}
+    .summaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+    .summaryCard{background:rgba(15,23,42,0.8);border-radius:12px;padding:14px;text-align:center}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);border:1px solid #38BDF8;padding:14px 28px;border-radius:12px;color:#F8FAFC;font-weight:600;z-index:9999;display:none}
+    .toast.show{display:block;animation:fadeIn .3s}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .login-box{max-width:400px;margin:80px auto;background:rgba(30,41,59,0.7);backdrop-filter:blur(20px);border:1px solid rgba(56,189,248,0.15);border-radius:24px;padding:40px;text-align:center}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <div id="loginOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;justify-content:center;align-items:center;z-index:9999;">
+    <div class="login-box">
+      <h2 style="color:#38BDF8;margin-bottom:8px;"><i class="fas fa-store"></i> Shop Owner</h2>
+      <p style="color:#94A3B8;font-size:13px;margin-bottom:20px;">Login to your shop dashboard</p>
+      <input id="shopLoginEmail" placeholder="Email" />
+      <input id="shopLoginPassword" type="password" placeholder="Password" />
+      <button class="btn btn-primary" id="shopLoginBtn" style="width:100%;padding:14px;margin-top:10px;"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <p id="shopLoginError" style="color:#F87171;font-size:12px;margin-top:10px;"></p>
+      <p style="color:#64748B;font-size:11px;margin-top:12px;">Accounts created only by Admin</p>
+    </div>
+  </div>
+  <div id="appShell" class="hidden">
+    <header>
+      <div class="logo"><i class="fas fa-store"></i> LIVRILY <span style="font-size:12px;color:#22C55E;">Shop</span></div>
+      <div><span id="shopEmail" style="color:#94A3B8;font-size:13px;margin-right:12px;"></span><button class="btn btn-danger" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+    </header>
+    <nav>
+      <button class="active" data-tab="dashboard"><i class="fas fa-home"></i> Dashboard</button>
+      <button data-tab="products"><i class="fas fa-box"></i> Products</button>
+      <button data-tab="orders"><i class="fas fa-list"></i> Orders</button>
+    </nav>
+    <div class="container">
+      <div id="tab-dashboard" class="tab active">
+        <div class="card">
+          <h2>📈 Your Shop Stats</h2>
+          <div class="summaryGrid">
+            <div class="summaryCard"><b id="stat-products">0</b><br/><small>Products</small></div>
+            <div class="summaryCard"><b id="stat-orders">0</b><br/><small>Orders</small></div>
+            <div class="summaryCard"><b id="stat-pending" style="color:#F59E0B;">0</b><br/><small>Pending</small></div>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Recent Orders</h2><div id="recentOrders"></div></div>
+      </div>
+      <div id="tab-products" class="tab">
+        <div class="card">
+          <h2>➕ Add / Edit Product</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><label>Name</label><input id="prod-name" placeholder="Product name" /></div>
+            <div><label>Price (DA)</label><input id="prod-price" type="number" placeholder="0" /></div>
+            <div><label>Quantity</label><input id="prod-qty" type="number" placeholder="0" /></div>
+            <div><label>Image URL (optional)</label><input id="prod-image" placeholder="https://..." /></div>
+          </div>
+          <button class="btn btn-success" style="width:100%;margin-top:12px;" id="addProductBtn"><i class="fas fa-plus"></i> Add Product</button>
+        </div>
+        <div class="card">
+          <h2>📦 Your Products</h2>
+          <div style="overflow-x:auto;"><table><thead><tr><th>Name</th><th>Price</th><th>Qty</th><th>Actions</th></tr></thead><tbody id="productsBody"></tbody></table></div>
+        </div>
+      </div>
+      <div id="tab-orders" class="tab">
+        <div class="card">
+          <h2>📋 Incoming Orders (Client → You)</h2>
+          <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>Client</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    const config = {
+      apiKey: "AIzaSyCYF6XBpCqB2ohHTJSLyc1oBe1rGkByzjE",
+      authDomain: "livrily-a6e7e.firebaseapp.com",
+      projectId: "livrily-a6e7e",
+      storageBucket: "livrily-a6e7e.firebasestorage.app",
+      messagingSenderId: "904979289112",
+      appId: "1:904979289112:web:9981377a9500b940091f6d"
+    };
+    let app; try{ app=getApps().length?getApp():initializeApp(config); }catch(_){ app=initializeApp(config); }
+    const auth=getAuth(app); const db=getFirestore(app);
+    let currentUser=null, shopId=null, products=[], shopOrders=[];
+    let toastTimer; function showToast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('show'); if(toastTimer) clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),4000); }
+
+    onAuthStateChanged(auth, async (user)=>{
+      if(user){
+        const snap=await getDoc(doc(db,"users",user.uid));
+        if(snap.exists() && snap.data().role==='shopOwner'){
+          currentUser=user; shopId=user.uid;
+          document.getElementById('shopEmail').textContent=user.email;
+          document.getElementById('loginOverlay').style.display='none';
+          document.getElementById('appShell').classList.remove('hidden');
+          initShop(); return;
+        } else {
+          await signOut(auth);
+          document.getElementById('shopLoginError').textContent='Access denied. Not a shop owner.';
+        }
+      }
+    });
+    document.getElementById('shopLoginBtn').addEventListener('click', async ()=>{
+      const email=document.getElementById('shopLoginEmail').value.trim();
+      const pass=document.getElementById('shopLoginPassword').value;
+      const error=document.getElementById('shopLoginError'); error.textContent='';
+      if(!email||!pass){ error.textContent='Enter email and password'; return; }
+      try{ await signInWithEmailAndPassword(auth,email,pass); }catch(e){ error.textContent=e.message.replace(/Firebase: /,''); }
+    });
+    document.getElementById('logoutBtn').addEventListener('click', async ()=>{ await signOut(auth); location.reload(); });
+
+    let unsubs=[];
+    function initShop(){
+      unsubs.forEach(fn=>{try{fn()}catch(e){}}); unsubs=[];
+      const qProducts=query(collection(db,"products"), where("shopId","==",shopId));
+      unsubs.push(onSnapshot(qProducts, (snap)=>{ products=snap.docs.map(d=>({id:d.id,...d.data()})); renderProducts(); updateStats(); }));
+      const qOrders=query(collection(db,"shopOrders"), where("shopId","==",shopId));
+      unsubs.push(onSnapshot(qOrders, (snap)=>{ shopOrders=snap.docs.map(d=>({id:d.id,...d.data()})); shopOrders.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)); renderOrders(); updateStats(); renderRecent(); }));
+      document.querySelectorAll('nav button').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+          document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        });
+      });
+      document.getElementById('addProductBtn').addEventListener('click', addProduct);
+    }
+    function updateStats(){
+      document.getElementById('stat-products').textContent=products.length;
+      document.getElementById('stat-orders').textContent=shopOrders.length;
+      document.getElementById('stat-pending').textContent=shopOrders.filter(o=>o.status==='pending').length;
+    }
+    function renderProducts(){
+      const body=document.getElementById('productsBody');
+      body.innerHTML=products.map(p=>`
+        <tr><td>${p.name}</td><td>${p.price||0} DA</td><td>${p.qty||0}</td>
+        <td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></td></tr>
+      `).join('')||'<tr><td colspan="4" style="color:#94A3B8;">No products</td></tr>';
+    }
+    async function addProduct(){
+      const name=document.getElementById('prod-name').value.trim();
+      const price=parseFloat(document.getElementById('prod-price').value)||0;
+      const qty=parseInt(document.getElementById('prod-qty').value)||0;
+      const image=document.getElementById('prod-image').value.trim();
+      if(!name){ showToast('❌ Name required'); return; }
+      const btn=document.getElementById('addProductBtn'); const editId=btn.dataset.editId;
+      try{
+        if(editId){
+          await updateDoc(doc(db,"products",editId),{name,price,qty,image});
+          showToast('✅ Product updated'); delete btn.dataset.editId; btn.innerHTML='<i class="fas fa-plus"></i> Add Product';
+        } else {
+          await addDoc(collection(db,"products"),{name,price,qty,image,shopId,createdAt:serverTimestamp()});
+          showToast('✅ Product added');
+        }
+        document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-qty').value=''; document.getElementById('prod-image').value='';
+      }catch(e){ showToast('❌ '+e.message); }
+    }
+    window.deleteProduct=async (id)=>{ if(!confirm('Delete product?')) return; try{ await deleteDoc(doc(db,"products",id)); showToast('✅ Deleted'); }catch(e){ showToast('❌ '+e.message); } };
+    window.editProduct=(id)=>{
+      const p=products.find(x=>x.id===id); if(!p) return;
+      document.getElementById('prod-name').value=p.name; document.getElementById('prod-price').value=p.price; document.getElementById('prod-qty').value=p.qty; document.getElementById('prod-image').value=p.image||'';
+      const btn=document.getElementById('addProductBtn'); btn.innerHTML='<i class="fas fa-save"></i> Update Product'; btn.dataset.editId=id;
+    };
+    function renderOrders(){
+      const body=document.getElementById('ordersBody');
+      body.innerHTML=shopOrders.map(o=>`
+        <tr>
+          <td>#${o.id.slice(0,5)}</td>
+          <td>${o.clientName}<br/><small style="color:#94A3B8;">${o.phone}<br/>${o.address}</small></td>
+          <td>${o.items.map(i=>`${i.name} x${i.qty}`).join('<br/>')}</td>
+          <td>${o.total} DA</td>
+          <td><span style="background:${o.status==='pending'?'#F59E0B':o.status==='accepted'?'#2563EB':o.status==='rejected'?'#DC2626':'#16A34A'};padding:3px 8px;border-radius:10px;color:#fff;font-size:10px;">${o.status}</span></td>
+          <td>${o.status==='pending'?`<button class="btn btn-success btn-sm" onclick="acceptOrder('${o.id}')"><i class="fas fa-check"></i> Accept</button> <button class="btn btn-danger btn-sm" onclick="rejectOrder('${o.id}')"><i class="fas fa-times"></i> Reject</button>`:'—'}</td>
+        </tr>`).join('')||'<tr><td colspan="6" style="color:#94A3B8;">No orders</td></tr>';
+    }
+    window.acceptOrder=async (orderId)=>{
+      try{
+        const order=shopOrders.find(o=>o.id===orderId); if(!order) return;
+        await updateDoc(doc(db,"shopOrders",orderId),{status:'accepted'});
+        for(const item of order.items){
+          const pref=doc(db,"products",item.productId);
+          const snap=await getDoc(pref);
+          if(snap.exists()){
+            const newQty=(snap.data().qty||0)-item.qty;
+            await updateDoc(pref,{qty:Math.max(newQty,0)});
+          }
+        }
+        await addDoc(collection(db,"orders"),{
+          customer:order.clientName, phone:order.phone, address:order.address,
+          products:order.items.map(i=>({name:i.name,qty:i.qty})), qty:order.items.reduce((s,i)=>s+i.qty,0),
+          clientTotal:order.total, yourIncome:order.total, driverKeeps:0, driver:null, driverId:null, driverName:null,
+          status:'pending', date:new Date().toISOString().slice(0,10), time:new Date().toLocaleTimeString(),
+          createdAt:serverTimestamp(), shopOrderId:orderId, shopId:shopId
+        });
+        showToast('✅ Order accepted. Manager can now assign driver.');
+      }catch(e){ showToast('❌ '+e.message); }
+    };
+    window.rejectOrder=async (orderId)=>{ if(!confirm('Reject this order?')) return; try{ await updateDoc(doc(db,"shopOrders",orderId),{status:'rejected'}); showToast('❌ Order rejected'); }catch(e){ showToast('❌ '+e.message); } };
+    function renderRecent(){ const recent=shopOrders.slice(0,5); document.getElementById('recentOrders').innerHTML=recent.map(o=>`<div class="row"><span>${o.clientName}</span><span>${o.total} DA <span style="color:#94A3B8;">${o.status}</span></span></div>`).join('')||'<p style="color:#94A3B8;">No orders yet</p>'; }
+  </script>
+</body>
+</html>
